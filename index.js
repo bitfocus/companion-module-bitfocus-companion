@@ -155,11 +155,12 @@ instance.prototype.init_actions = function(system) {
 	self.CHOICES_PAGES.length = 0;
 	for (var page in self.pages) {
 		var name = 'Page ' + page;
+
 		if (self.pages[page].name !== undefined && self.pages[page].name != 'PAGE') {
 			name += ' (' + self.pages[page].name + ')';
 		}
 		self.CHOICES_PAGES.push({
-			label: 'Page ' + page + ' (' + name	+ ')',
+			label: name,
 			id: page
 		});
 	}
