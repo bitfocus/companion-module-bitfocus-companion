@@ -1,9 +1,9 @@
 {
   "name": "bitfocus-companion",
-  "version": "1.0.0",
+  "version": "1.0.1",
 	"api_version": "1.0.0",
   "description": "Internal functions",
-	"keywords": [ "Internal", "Companion" ],
+	"keywords": [ ],
 	"manufacturer": "Bitfocus",
 	"product": "companion",
 	"shortname": "companion",
