@@ -173,7 +173,7 @@ instance.prototype.init_actions = function(system) {
 					 type: 'dropdown',
 					 label: 'Instance',
 					 id: 'instance_id',
-					 default: self.CHOICES_INSTANCES[0].id,
+					 default: self.CHOICES_INSTANCES.length > 0 ? self.CHOICES_INSTANCES[0].id : undefined,
 					 choices: self.CHOICES_INSTANCES
 				},
 				{
