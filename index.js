@@ -203,6 +203,9 @@ instance.prototype.init_actions = function(system) {
 					choices: self.CHOICES_PAGES
 				}
 			]
+		},
+		'panic': {
+			label: 'Abort all delayed actions'
 		}
 	});
 };
@@ -215,7 +218,9 @@ instance.prototype.action = function(action, extras) {
 
 	if (id == 'instance_control') {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true');
-	} else if (id == 'set_page') {
+	}
+
+	else if (id == 'set_page') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
 
 		// Change page after this runloop
@@ -229,6 +234,11 @@ instance.prototype.action = function(action, extras) {
 			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
 		}
 	}
+
+	else if (id == 'panic') {
+		self.system.emit('action_delayed_abort');
+	}
+
 };
 
 instance_skel.extendedBy(instance);
