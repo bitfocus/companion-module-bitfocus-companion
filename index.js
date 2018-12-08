@@ -64,6 +64,7 @@ instance.prototype.devices_list = function(list) {
 	self.devices = list;
 	self.init_actions();
 };
+
 instance.prototype.devices_getall = function() {
 	var self = this;
 
@@ -204,6 +205,30 @@ instance.prototype.init_actions = function(system) {
 				}
 			]
 		},
+		'inc_page': {
+			label: 'Increment page number',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Surface / controller',
+					id: 'controller',
+					default: 'self',
+					choices: self.CHOICES_SURFACES
+				}
+			]
+		},
+		'dec_page': {
+			label: 'Decrement page number',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Surface / controller',
+					id: 'controller',
+					default: 'self',
+					choices: self.CHOICES_SURFACES
+				}
+			]
+		},
 		'panic': {
 			label: 'Abort all delayed actions'
 		}
@@ -226,6 +251,36 @@ instance.prototype.action = function(action, extras) {
 		// Change page after this runloop
 		setImmediate(function () {
 			self.system.emit('device_set_page', surface, opt.page);
+		});
+
+		// If we change page while pushing a button, we need to tell the button that we were done with it
+		// TODO: Somehow handle the futile "action_release" of the same button on the new page
+		if (surface == extras.deviceid) {
+			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+		}
+	}
+
+	else if (id == 'inc_page') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+
+		// Change page after this runloop
+		setImmediate(function () {
+			self.system.emit('device_inc_page', surface);
+		});
+
+		// If we change page while pushing a button, we need to tell the button that we were done with it
+		// TODO: Somehow handle the futile "action_release" of the same button on the new page
+		if (surface == extras.deviceid) {
+			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+		}
+	}
+
+	else if (id == 'dec_page') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+
+		// Change page after this runloop
+		setImmediate(function () {
+			self.system.emit('device_dec_page', surface);
 		});
 
 		// If we change page while pushing a button, we need to tell the button that we were done with it
