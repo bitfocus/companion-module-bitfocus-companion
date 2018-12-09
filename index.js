@@ -31,6 +31,12 @@ instance.prototype.init = function() {
 	self.CHOICES_SURFACES = [];
 	self.CHOICES_PAGES = [];
 
+	self.CHOICES_BANKS = [];
+
+	for (var bank = 1; bank <= 15; bank++) {
+		self.CHOICES_BANKS.push({ label: 'Bank ' + bank, id: bank });
+	}
+
 	self.pages_getall();
 	self.addSystemCallback('page-update', self.pages_update.bind(self));
 
@@ -229,6 +235,91 @@ instance.prototype.init_actions = function(system) {
 				}
 			]
 		},
+
+		'button_pressrelease': {
+			label: 'Button press and release',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Surface / controller',
+					id: 'controller',
+					default: 'self',
+					choices: self.CHOICES_SURFACES
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+
+			]
+		},
+
+		'button_press': {
+			label: 'Button Press',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Surface / controller',
+					id: 'controller',
+					default: 'self',
+					choices: self.CHOICES_SURFACES
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+
+			]
+		},
+
+		'button_release': {
+			label: 'Button Release',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Surface / controller',
+					id: 'controller',
+					default: 'self',
+					choices: self.CHOICES_SURFACES
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+
+			]
+		},
+
 		'panic': {
 			label: 'Abort all delayed actions'
 		}
@@ -292,6 +383,22 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'panic') {
 		self.system.emit('action_delayed_abort');
+	}
+
+	else if (id == 'button_pressrelease') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		self.system.emit('bank-pressed', opt.page, opt.bank, true, surface);
+		self.system.emit('bank-pressed', opt.page, opt.bank, false, surface);
+	}
+
+	else if (id == 'button_press') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		self.system.emit('bank-pressed', opt.page, opt.bank, true, surface);
+	}
+
+	else if (id == 'button_release') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		self.system.emit('bank-pressed', opt.page, opt.bank, false, surface);
 	}
 
 };
