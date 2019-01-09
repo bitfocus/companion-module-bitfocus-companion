@@ -356,7 +356,7 @@ instance.prototype.action = function(action, extras) {
 
 		// Change page after this runloop
 		setImmediate(function () {
-			self.system.emit('device_inc_page', surface);
+			self.system.emit('device_page_up', surface);
 		});
 
 		// If we change page while pushing a button, we need to tell the button that we were done with it
@@ -371,7 +371,7 @@ instance.prototype.action = function(action, extras) {
 
 		// Change page after this runloop
 		setImmediate(function () {
-			self.system.emit('device_dec_page', surface);
+			self.system.emit('device_page_down', surface);
 		});
 
 		// If we change page while pushing a button, we need to tell the button that we were done with it
