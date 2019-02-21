@@ -320,6 +320,10 @@ instance.prototype.init_actions = function(system) {
 			]
 		},
 
+		'rescan': {
+			label: 'Rescan USB for devices'
+		},
+
 		'panic': {
 			label: 'Abort all delayed actions'
 		}
@@ -383,6 +387,10 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'panic') {
 		self.system.emit('action_delayed_abort');
+	}
+
+	else if (id == 'rescan') {
+		self.system.emit('devices_reenumerate');
 	}
 
 	else if (id == 'button_pressrelease') {
