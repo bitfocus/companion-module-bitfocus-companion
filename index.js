@@ -319,7 +319,61 @@ instance.prototype.init_actions = function(system) {
 
 			]
 		},
+		'textcolor': {
+			label: 'Button Text Color',
+			options: [
+				{
+					type: 'colorpicker',
+					label: 'Text Color',
+					id: 'color',
+					default: '0',
+					choices: self.CHOICES_SURFACES
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
 
+			]
+		},
+
+		'bgcolor': {
+			label: 'Button Background Color',
+			options: [
+				{
+					type: 'colorpicker',
+					label: 'Background Color',
+					id: 'color',
+					default: '0',
+					choices: self.CHOICES_SURFACES
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+
+			]
+		},
 		'rescan': {
 			label: 'Rescan USB for devices'
 		},
@@ -391,6 +445,14 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'rescan') {
 		self.system.emit('devices_reenumerate');
+	}
+
+	else if (id == 'bgcolor') {
+		self.system.emit('bank_changefield', opt.page, opt.bank, 'bgcolor', opt.color);
+	}
+
+	else if (id == 'textcolor') {
+		self.system.emit('bank_changefield', opt.page, opt.bank, 'color', opt.color);
 	}
 
 	else if (id == 'button_pressrelease') {
