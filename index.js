@@ -92,7 +92,9 @@ instance.prototype.instance_getall = function(instances, active) {
 	self.CHOICES_INSTANCES.length = 0;
 
 	for (var key in self.instances) {
-		self.CHOICES_INSTANCES.push({ label: self.instances[key].label, id: key });
+		if (self.instances[key].label !== 'internal') {
+			self.CHOICES_INSTANCES.push({ label: self.instances[key].label, id: key });
+		}
 	}
 
 	self.init_actions();
