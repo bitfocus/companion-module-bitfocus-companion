@@ -407,7 +407,7 @@ instance.prototype.action = function(action, extras) {
 		// If we change page while pushing a button, we need to tell the button that we were done with it
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
 		}
 	}
 
@@ -422,7 +422,7 @@ instance.prototype.action = function(action, extras) {
 		// If we change page while pushing a button, we need to tell the button that we were done with it
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
 		}
 	}
 
@@ -437,7 +437,7 @@ instance.prototype.action = function(action, extras) {
 		// If we change page while pushing a button, we need to tell the button that we were done with it
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
 		}
 	}
 
@@ -459,18 +459,18 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'button_pressrelease') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.system.emit('bank_pressed', opt.page, opt.bank, true, surface);
-		self.system.emit('bank_pressed', opt.page, opt.bank, false, surface);
+		self.system.emit('bank-pressed', opt.page, opt.bank, true, surface);
+		self.system.emit('bank-pressed', opt.page, opt.bank, false, surface);
 	}
 
 	else if (id == 'button_press') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.system.emit('bank_pressed', opt.page, opt.bank, true, surface);
+		self.system.emit('bank-pressed', opt.page, opt.bank, true, surface);
 	}
 
 	else if (id == 'button_release') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.system.emit('bank_pressed', opt.page, opt.bank, false, surface);
+		self.system.emit('bank-pressed', opt.page, opt.bank, false, surface);
 	}
 
 };
