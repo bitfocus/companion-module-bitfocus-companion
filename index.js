@@ -213,6 +213,18 @@ instance.prototype.init_actions = function(system) {
 				}
 			]
 		},
+		'lockout_device': {
+			label: 'Trigger a device to lockout immediately.',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Surface / controller',
+					id: 'controller',
+					default: 'self',
+					choices: self.CHOICES_SURFACES
+				}
+			]
+		},
 		'inc_page': {
 			label: 'Increment page number',
 			options: [
@@ -392,6 +404,11 @@ instance.prototype.action = function(action, extras) {
 	var cmd;
 	var opt = action.options;
 
+	// get userconfig object
+	system.emit('get_userconfig', function(userconfig) {
+		self.userconfig = userconfig;
+	});
+
 	if (id == 'instance_control') {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true');
 	}
@@ -408,6 +425,16 @@ instance.prototype.action = function(action, extras) {
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
 			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+		}
+	}
+
+	else if (id == 'lockout_device') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		if(self.userconfig.pin_enable){
+			// Change page after this runloop
+			setImmediate(function () {
+				self.system.emit('lockout_device', surface, opt.page);
+			});
 		}
 	}
 
