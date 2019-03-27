@@ -34,7 +34,7 @@ instance.prototype.init = function() {
 	self.CHOICES_BANKS = [];
 
 	for (var bank = 1; bank <= 15; bank++) {
-		self.CHOICES_BANKS.push({ label: bank, id: bank });
+		self.CHOICES_BANKS.push({ label: 'Bank ' + bank, id: bank });
 	}
 
 	self.pages_getall();
@@ -163,7 +163,7 @@ instance.prototype.init_actions = function(system) {
 
 	self.CHOICES_PAGES.length = 0;
 	for (var page in self.pages) {
-		var name = page;
+		var name = 'Page ' + page;
 
 		if (self.pages[page].name !== undefined && self.pages[page].name != 'PAGE') {
 			name += ' (' + self.pages[page].name + ')';
