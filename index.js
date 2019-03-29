@@ -225,6 +225,24 @@ instance.prototype.init_actions = function(system) {
 				}
 			]
 		},
+		'unlockout_device': {
+			label: 'Trigger a device to unlock immediately.',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Surface / controller',
+					id: 'controller',
+					default: 'self',
+					choices: self.CHOICES_SURFACES
+				}
+			]
+		},
+		'lockout_all': {
+			label: 'Trigger all devices to lockout immediately.'
+		},
+		'unlockout_all': {
+			label: 'Trigger all devices to unlock immediately.'
+		},
 		'inc_page': {
 			label: 'Increment page number',
 			options: [
@@ -432,8 +450,46 @@ instance.prototype.action = function(action, extras) {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
 		if(self.userconfig.pin_enable){
 			// Change page after this runloop
+			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
 			setImmediate(function () {
-				self.system.emit('lockout_device', surface, opt.page);
+				if (self.userconfig.link_lockouts) {
+					self.system.emit('lockoutall');
+				} else {
+					self.system.emit('lockout_device', surface, opt.page);
+				}
+			});
+		}
+	}
+
+	else if (id == 'unlockout_device') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		if(self.userconfig.pin_enable){
+			// Change page after this runloop
+			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			setImmediate(function () {
+				if (self.userconfig.link_lockouts) {
+					self.system.emit('unlockoutall');
+				} else {
+					self.system.emit('unlockout_device', surface, opt.page);
+				}
+			});
+		}
+	}
+
+	else if (id == 'lockout_all') {
+		if(self.userconfig.pin_enable){
+			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			setImmediate(function () {
+				self.system.emit('lockoutall');
+			});
+		}
+	}
+
+	else if (id == 'unlockout_all') {
+		if(self.userconfig.pin_enable){
+			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			setImmediate(function () {
+				self.system.emit('unlockoutall');
 			});
 		}
 	}
