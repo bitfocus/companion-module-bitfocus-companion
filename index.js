@@ -13,6 +13,9 @@ function instance(system, id, config) {
 	// super-constructor
 	instance_skel.apply(this, arguments);
 
+	// Version 1 = from 15 to 32 keys config
+	self.addUpgradeScript(self.upgrade15to32.bind(self));
+
 	return self;
 }
 
@@ -33,7 +36,7 @@ instance.prototype.init = function() {
 
 	self.CHOICES_BANKS = [];
 
-	for (var bank = 1; bank <= 15; bank++) {
+	for (var bank = 1; bank <= global.MAX_BUTTONS; bank++) {
 		self.CHOICES_BANKS.push({ label: bank, id: bank });
 	}
 
@@ -47,6 +50,23 @@ instance.prototype.init = function() {
 	self.addSystemCallback('instance_save', self.instance_save.bind(self));
 
 	self.status(self.STATE_OK);
+
+};
+
+instance.prototype.upgrade15to32 = function(config, actions) {
+	var self = this;
+
+	for (var i = 0; i < actions.length; ++i) {
+		var action = actions[i];
+
+		if (action.options !== undefined && action.options.page !== undefined && action.options.bank !== undefined) {
+			var bank = parseInt(action.options.bank);
+
+			system.emit('bank_get15to32', bank, function (_bank) {
+				action.options.bank = _bank;
+			});
+		}
+	}
 };
 
 instance.prototype.pages_getall = function() {
