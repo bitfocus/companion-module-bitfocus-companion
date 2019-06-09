@@ -62,7 +62,7 @@ instance.prototype.upgrade15to32 = function(config, actions) {
 		if (action.options !== undefined && action.options.page !== undefined && action.options.bank !== undefined) {
 			var bank = parseInt(action.options.bank);
 
-			system.emit('bank_get15to32', bank, function (_bank) {
+			self.system.emit('bank_get15to32', bank, function (_bank) {
 				action.options.bank = _bank;
 			});
 		}
@@ -133,7 +133,7 @@ instance.prototype.removeAllSystemCallbacks = function () {
 	var self = this;
 
 	for (var key in self.callbacks) {
-		system.removeListener(key, self.callbacks[key]);
+		self.system.removeListener(key, self.callbacks[key]);
 		delete self.callbacks[key];
 	}
 };
@@ -443,7 +443,7 @@ instance.prototype.action = function(action, extras) {
 	var opt = action.options;
 
 	// get userconfig object
-	system.emit('get_userconfig', function(userconfig) {
+	self.system.emit('get_userconfig', function(userconfig) {
 		self.userconfig = userconfig;
 	});
 
