@@ -462,7 +462,7 @@ instance.prototype.action = function(action, extras) {
 		// If we change page while pushing a button, we need to tell the button that we were done with it
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
-			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
 		}
 	}
 
@@ -470,7 +470,7 @@ instance.prototype.action = function(action, extras) {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
 		if(self.userconfig.pin_enable){
 			// Change page after this runloop
-			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
 			setImmediate(function () {
 				if (self.userconfig.link_lockouts) {
 					self.system.emit('lockoutall');
@@ -485,7 +485,7 @@ instance.prototype.action = function(action, extras) {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
 		if(self.userconfig.pin_enable){
 			// Change page after this runloop
-			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
 			setImmediate(function () {
 				if (self.userconfig.link_lockouts) {
 					self.system.emit('unlockoutall');
@@ -498,7 +498,7 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'lockout_all') {
 		if(self.userconfig.pin_enable){
-			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
 			setImmediate(function () {
 				self.system.emit('lockoutall');
 			});
@@ -507,7 +507,7 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'unlockout_all') {
 		if(self.userconfig.pin_enable){
-			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
 			setImmediate(function () {
 				self.system.emit('unlockoutall');
 			});
@@ -525,7 +525,7 @@ instance.prototype.action = function(action, extras) {
 		// If we change page while pushing a button, we need to tell the button that we were done with it
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
-			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
 		}
 	}
 
@@ -540,7 +540,7 @@ instance.prototype.action = function(action, extras) {
 		// If we change page while pushing a button, we need to tell the button that we were done with it
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
-			self.system.emit('bank-pressed', extras.page, extras.bank, false, surface);
+			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
 		}
 	}
 
@@ -562,18 +562,18 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'button_pressrelease') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.system.emit('bank-pressed', opt.page, opt.bank, true, surface);
-		self.system.emit('bank-pressed', opt.page, opt.bank, false, surface);
+		self.system.emit('bank_pressed', opt.page, opt.bank, true, surface);
+		self.system.emit('bank_pressed', opt.page, opt.bank, false, surface);
 	}
 
 	else if (id == 'button_press') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.system.emit('bank-pressed', opt.page, opt.bank, true, surface);
+		self.system.emit('bank_pressed', opt.page, opt.bank, true, surface);
 	}
 
 	else if (id == 'button_release') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.system.emit('bank-pressed', opt.page, opt.bank, false, surface);
+		self.system.emit('bank_pressed', opt.page, opt.bank, false, surface);
 	}
 
 };
