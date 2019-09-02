@@ -432,7 +432,12 @@ instance.prototype.init_actions = function(system) {
 
 		'panic': {
 			label: 'Abort all delayed actions'
+		},
+
+		'app_exit': {
+			label: 'Kill companion'
 		}
+
 	});
 };
 
@@ -575,6 +580,11 @@ instance.prototype.action = function(action, extras) {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
 		self.system.emit('bank_pressed', opt.page, opt.bank, false, surface);
 	}
+
+	else if (id == 'app_exit') {
+		self.system.emit('exit');
+	}
+
 
 };
 
