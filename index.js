@@ -436,8 +436,10 @@ instance.prototype.init_actions = function(system) {
 
 		'app_exit': {
 			label: 'Kill companion'
+		},
+		'app_restart': {
+			label: 'Restart companion'
 		}
-
 	});
 };
 
@@ -584,7 +586,10 @@ instance.prototype.action = function(action, extras) {
 	else if (id == 'app_exit') {
 		self.system.emit('exit');
 	}
-
+	
+	else if (id == 'app_restart') {
+		self.system.emit('restart');
+	}
 
 };
 
