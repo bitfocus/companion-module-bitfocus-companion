@@ -1,6 +1,7 @@
 var instance_skel = require('../../instance_skel');
 var debug;
 var log;
+var exec = (require('child_process')).exec;
 
 function instance(system, id, config) {
 	var self = this;
@@ -254,6 +255,16 @@ instance.prototype.init_actions = function(system) {
 					id: 'controller',
 					default: 'self',
 					choices: self.CHOICES_SURFACES
+				}
+			]
+		},
+		'exec': {
+			label: 'Run shell path (local)',
+			options: [
+				{
+					type: 'textinput',
+					label: 'Path',
+					id: 'path',
 				}
 			]
 		},
@@ -581,6 +592,22 @@ instance.prototype.action = function(action, extras) {
 	else if (id == 'button_release') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
 		self.system.emit('bank_pressed', opt.page, opt.bank, false, surface);
+	}
+
+	else if (id == 'exec') {
+		debug("Running path: '"+opt.path+"'");
+		exec(opt.path, {
+			timeout: 5
+		}, function(error, stdout, stderr) {
+
+				if (error) {
+					log('error', "Shell command failed. Guru meditation: " + JSON.stringify(error));
+					debug(error);
+				}
+				console.log("STDOUT:", stdout);
+				console.log("STDERR:", stderr);
+				
+		});
 	}
 
 	else if (id == 'app_exit') {
