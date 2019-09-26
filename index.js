@@ -8,8 +8,31 @@ function instance(system, id, config) {
 
 	self.model = 0;
 	self.states = {};
-
+	self.system = system;
 	self.inputs = {};
+
+	self.instance_errors = 0;
+	self.instance_warns = 0;
+	self.instance_oks = 0;
+	
+	self.system.on('instance_errorcount', function(errcount) {
+	
+		self.instance_errors = errcount[2];
+		self.instance_warns = errcount[1];
+		self.instance_oks = errcount[0];
+		
+		self.setVariable('instance_errors', self.instance_errors);
+		self.setVariable('instance_warns', self.instance_warns);
+		self.setVariable('instance_oks', self.instance_oks);
+		
+		self.checkFeedbacks('instance_status');
+	});
+
+	self.time_interval = setInterval(function() {
+		var now = new Date();
+		self.setVariable('time_hms', now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds() );
+		self.setVariable('time_hm', now.getHours() + ":" + now.getMinutes() );
+	}, 1000);
 
 	// super-constructor
 	instance_skel.apply(this, arguments);
@@ -51,6 +74,9 @@ instance.prototype.init = function() {
 	self.addSystemCallback('instance_save', self.instance_save.bind(self));
 
 	self.status(self.STATE_OK);
+
+	self.checkFeedbacks();
+	self.update_variables();
 
 };
 
@@ -163,7 +189,9 @@ instance.prototype.config_fields = function () {
 // When module gets deleted
 instance.prototype.destroy = function() {
 	var self = this;
-
+	if (self.time_interval) {
+		clearInterval(self.time_interval);
+	}
 	self.removeAllSystemCallbacks();
 };
 
@@ -604,8 +632,6 @@ instance.prototype.action = function(action, extras) {
 					log('error', "Shell command failed. Guru meditation: " + JSON.stringify(error));
 					debug(error);
 				}
-				console.log("STDOUT:", stdout);
-				console.log("STDERR:", stderr);
 				
 		});
 	}
@@ -619,6 +645,91 @@ instance.prototype.action = function(action, extras) {
 	}
 
 };
+
+
+
+
+
+instance.prototype.update_variables = function (system) {
+	var self = this;
+	var variables = [];
+
+	variables.push({
+		label: 'Time of day (HH:MM:SS)',
+		name: 'time_hms'
+	});
+	variables.push({
+		label: 'Time of day (HH:MM)',
+		name: 'time_hm'
+	});
+
+	variables.push({
+		label: 'Instances with errors',
+		name: 'instance_errors'
+	});
+	variables.push({
+		label: 'Instances with warnings',
+		name: 'instance_warns'
+	});
+	variables.push({
+		label: 'Instances OK',
+		name: 'instance_oks'
+	});
+
+	self.setVariable('instance_errors', 0);
+	self.setVariable('instance_warns', 0);
+	self.setVariable('instance_oks', 0);
+	self.setVariable('time_hms', '');
+	self.setVariable('time_hm', '');
+
+	self.setVariableDefinitions(variables);
+
+	// feedbacks
+	var feedbacks = {};
+
+	feedbacks['instance_status'] = {
+		label: 'Companion Instance Status',
+		description: 'If any companion instance encounters any errors, this will turn red',
+		options: []
+	};
+
+	self.setFeedbackDefinitions(feedbacks);
+};
+
+instance.prototype.feedback = function(feedback, bank) {
+	var self = this;
+
+	if (feedback.type == 'instance_status') {
+
+		if (self.instance_errors > 0) {
+			return {
+				color: self.rgb(255,255,255),
+				bgcolor: self.rgb(200,0,0)
+			};
+		}
+		
+		if (self.instance_warns > 0) {
+			return {
+				color: self.rgb(0,0,0),
+				bgcolor: self.rgb(255,255,0)
+			};
+		}
+
+		return {
+			color: self.rgb(255,255,255),
+			bgcolor: self.rgb(0,200,0)
+		};
+
+
+	}
+};
+
+
+
+
+
+
+
 
 instance_skel.extendedBy(instance);
 exports = module.exports = instance;
