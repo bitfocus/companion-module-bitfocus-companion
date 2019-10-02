@@ -78,6 +78,8 @@ instance.prototype.init = function() {
 	self.checkFeedbacks();
 	self.update_variables();
 
+	self.bind_ip_get();
+	self.addSystemCallback('ip_rebind', self.bind_ip_get.bind(self));
 };
 
 instance.prototype.upgrade15to32 = function(config, actions) {
@@ -95,6 +97,14 @@ instance.prototype.upgrade15to32 = function(config, actions) {
 		}
 	}
 };
+
+instance.prototype.bind_ip_get = function() {
+	var self = this;
+
+	system.emit('config_get', 'bind_ip', function (bind_ip) {
+		self.setVariable('bind_ip', bind_ip);
+	});
+}
 
 instance.prototype.pages_getall = function() {
 	var self = this;
@@ -676,11 +686,17 @@ instance.prototype.update_variables = function (system) {
 		name: 'instance_oks'
 	});
 
+	variables.push({
+		label: 'IP of network interface',
+		name: 'bind_ip'
+	});
+
 	self.setVariable('instance_errors', 0);
 	self.setVariable('instance_warns', 0);
 	self.setVariable('instance_oks', 0);
 	self.setVariable('time_hms', '');
 	self.setVariable('time_hm', '');
+	self.setVariable('bind_ip', '');
 
 	self.setVariableDefinitions(variables);
 
