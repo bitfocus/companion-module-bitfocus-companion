@@ -33,7 +33,7 @@ instance.prototype.init = function() {
 
 	self.CHOICES_BANKS = [];
 
-	for (var bank = 1; bank <= 15; bank++) {
+	for (var bank = 1; bank <= 12; bank++) {
 		self.CHOICES_BANKS.push({ label: bank, id: bank });
 	}
 
