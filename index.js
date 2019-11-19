@@ -29,9 +29,11 @@ function instance(system, id, config) {
 	});
 
 	self.time_interval = setInterval(function() {
-		var now = new Date();
-		self.setVariable('time_hms', now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds() );
-		self.setVariable('time_hm', now.getHours() + ":" + now.getMinutes() );
+		const now = new Date();
+		const hhmm = (`0${now.getHours()}`).slice(-2) + ":" + (`0${now.getMinutes()}`).slice(-2)
+		const hhmmss = hhmm + ":" + (`0${now.getSeconds()}`).slice(-2)
+		self.setVariable('time_hms', hhmmss);
+		self.setVariable('time_hm', hhmm);
 	}, 1000);
 
 	// super-constructor
