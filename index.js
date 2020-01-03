@@ -14,24 +14,24 @@ function instance(system, id, config) {
 	self.instance_errors = 0;
 	self.instance_warns = 0;
 	self.instance_oks = 0;
-	
+
 	self.system.on('instance_errorcount', function(errcount) {
-	
+
 		self.instance_errors = errcount[2];
 		self.instance_warns = errcount[1];
 		self.instance_oks = errcount[0];
-		
+
 		self.setVariable('instance_errors', self.instance_errors);
 		self.setVariable('instance_warns', self.instance_warns);
 		self.setVariable('instance_oks', self.instance_oks);
-		
+
 		self.checkFeedbacks('instance_status');
 	});
 
 	self.time_interval = setInterval(function() {
 		const now = new Date();
-		const hhmm = (`0${now.getHours()}`).slice(-2) + ":" + (`0${now.getMinutes()}`).slice(-2)
-		const hhmmss = hhmm + ":" + (`0${now.getSeconds()}`).slice(-2)
+		const hhmm = (`0${now.getHours()}`).slice(-2) + ":" + (`0${now.getMinutes()}`).slice(-2);
+		const hhmmss = hhmm + ":" + (`0${now.getSeconds()}`).slice(-2);
 		self.setVariable('time_hms', hhmmss);
 		self.setVariable('time_hm', hhmm);
 	}, 1000);
@@ -106,7 +106,7 @@ instance.prototype.bind_ip_get = function() {
 	system.emit('config_get', 'bind_ip', function (bind_ip) {
 		self.setVariable('bind_ip', bind_ip);
 	});
-}
+};
 
 instance.prototype.pages_getall = function() {
 	var self = this;
@@ -195,7 +195,7 @@ instance.prototype.config_fields = function () {
 			label: 'Information',
 			value: 'This module exposes internal functions of companion and does not have any configuration options'
 		}
-	]
+	];
 };
 
 // When module gets deleted
@@ -219,7 +219,7 @@ instance.prototype.init_actions = function(system) {
 		self.CHOICES_SURFACES.push({
 			label: self.devices[i].type + ' (' + self.devices[i].serialnumber + ')',
 			id: self.devices[i].serialnumber
-		})
+		});
 	}
 
 	self.CHOICES_PAGES.length = 0;
@@ -517,11 +517,13 @@ instance.prototype.action = function(action, extras) {
 			self.system.emit('device_page_set', surface, opt.page);
 		});
 
+		/* 2-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
+			between a button press and release and 'releases' the correct page-bank
 		// If we change page while pushing a button, we need to tell the button that we were done with it
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
 			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
-		}
+		} */
 	}
 
 	else if (id == 'lockout_device') {
@@ -644,14 +646,14 @@ instance.prototype.action = function(action, extras) {
 					log('error', "Shell command failed. Guru meditation: " + JSON.stringify(error));
 					debug(error);
 				}
-				
+
 		});
 	}
 
 	else if (id == 'app_exit') {
 		self.system.emit('exit');
 	}
-	
+
 	else if (id == 'app_restart') {
 		self.system.emit('restart');
 	}
@@ -725,7 +727,7 @@ instance.prototype.feedback = function(feedback, bank) {
 				bgcolor: self.rgb(200,0,0)
 			};
 		}
-		
+
 		if (self.instance_warns > 0) {
 			return {
 				color: self.rgb(0,0,0),
