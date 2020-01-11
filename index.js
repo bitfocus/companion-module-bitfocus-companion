@@ -581,12 +581,14 @@ instance.prototype.action = function(action, extras) {
 		setImmediate(function () {
 			self.system.emit('device_page_up', surface);
 		});
-
+		/* 8-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
+			between a button press and release and 'releases' the correct page-bank
 		// If we change page while pushing a button, we need to tell the button that we were done with it
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
 			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
-		}
+		 }
+		*/
 	}
 
 	else if (id == 'dec_page') {
@@ -597,11 +599,14 @@ instance.prototype.action = function(action, extras) {
 			self.system.emit('device_page_down', surface);
 		});
 
-		// If we change page while pushing a button, we need to tell the button that we were done with it
+		/* 8-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
+			between a button press and release and 'releases' the correct page-bank
+		 // If we change page while pushing a button, we need to tell the button that we were done with it
 		// TODO: Somehow handle the futile "action_release" of the same button on the new page
 		if (surface == extras.deviceid) {
 			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
 		}
+		*/
 	}
 
 	else if (id == 'panic') {
