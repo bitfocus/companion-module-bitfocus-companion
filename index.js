@@ -130,7 +130,6 @@ instance.prototype.bind_ip_get = function() {
 	}
 
 	self.setVariable('all_ip', ip);
-	console.log( ip );
 	self.system.emit('log', 'Interface', 'info', 'All IP addresses: ' + ip)
 };
 
