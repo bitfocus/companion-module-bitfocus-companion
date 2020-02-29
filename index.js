@@ -4,6 +4,8 @@ var exec          = (require('child_process')).exec;
 var debug;
 var log;
 
+var interfaces = [];
+
 
 function instance(system, id, config) {
 	var self = this;
@@ -109,28 +111,6 @@ instance.prototype.bind_ip_get = function() {
 		self.setVariable('bind_ip', bind_ip);
 	});
 
-	const networkInterfaces = os.networkInterfaces();
-	let ip = '';
-	let firstIp;
-
-	for (const interface in networkInterfaces) {
-		let numberOfAddresses = networkInterfaces[interface].length;
-		for (let i = 0; i < numberOfAddresses; i++) {
-			if(networkInterfaces[interface][i]['family'] === 'IPv4') {
-				if(firstIp === undefined || firstIp === "127.0.0.1") {
-					firstIp = networkInterfaces[interface][i]['address'];
-					ip += " " + networkInterfaces[interface][i]['address'];
-					self.system.emit('log', 'Interface', 'info', 'IP address for variable: ' + firstIp)
-					self.setVariable('first_ip', firstIp);
-				} else {
-					ip += " " + networkInterfaces[interface][i]['address']
-				}
-			}
-		}
-	}
-
-	self.setVariable('all_ip', ip);
-	self.system.emit('log', 'Interface', 'info', 'All IP addresses: ' + ip)
 };
 
 instance.prototype.pages_getall = function() {
@@ -685,13 +665,35 @@ instance.prototype.action = function(action, extras) {
 
 };
 
+function getNetworkInterfaces() {
+	var interfaces = [];
+	const networkInterfaces = os.networkInterfaces();
+	
+	for (const interface in networkInterfaces) {
+		let numberOfAddresses = networkInterfaces[interface].length;
+		for (let i = 0; i < numberOfAddresses; i++) {
+			if(networkInterfaces[interface][i]['family'] === 'IPv4') {
+				interfaces.push({
+					label: interface,
+					name: interface,
+					address: networkInterfaces[interface][i]['address']
+				});
+			}
+		}
+	}
 
+	return interfaces;
+}
 
 
 
 instance.prototype.update_variables = function (system) {
 	var self = this;
-	var variables = [];
+	var variables = getNetworkInterfaces();
+
+	for (let i=0; i < variables.length; i++) {
+		self.setVariable(variables[i].name, variables[i].address);
+	}
 
 	variables.push({
 		label: 'Time of day (HH:MM:SS)',
@@ -716,16 +718,6 @@ instance.prototype.update_variables = function (system) {
 	});
 
 	variables.push({
-		label: 'IP of first network interface',
-		name: 'first_ip'
-	});
-
-	variables.push({
-		label: 'IP of all network interfaces',
-		name: 'all_ip'
-	});
-
-	variables.push({
 		label: 'IP of binded network interface',
 		name: 'bind_ip'
 	});
@@ -736,8 +728,6 @@ instance.prototype.update_variables = function (system) {
 	self.setVariable('time_hms', '');
 	self.setVariable('time_hm', '');
 	self.setVariable('bind_ip', '');
-	self.setVariable('all_ip', '');
-	self.setVariable('first_ip', '');
 
 	self.setVariableDefinitions(variables);
 
