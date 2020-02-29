@@ -117,7 +117,7 @@ instance.prototype.bind_ip_get = function() {
 		let numberOfAddresses = networkInterfaces[interface].length;
 		for (let i = 0; i < numberOfAddresses; i++) {
 			if(networkInterfaces[interface][i]['family'] === 'IPv4') {
-				if(firstIp === undefined) {
+				if(firstIp === undefined || firstIp === "127.0.0.1") {
 					firstIp = networkInterfaces[interface][i]['address'];
 					ip += " " + networkInterfaces[interface][i]['address'];
 					self.system.emit('log', 'Interface', 'info', 'IP address for variable: ' + firstIp)
