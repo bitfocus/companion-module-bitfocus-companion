@@ -668,7 +668,7 @@ instance.prototype.action = function(action, extras) {
 function getNetworkInterfaces() {
 	var interfaces = [];
 	const networkInterfaces = os.networkInterfaces();
-	
+
 	for (const interface in networkInterfaces) {
 		let numberOfAddresses = networkInterfaces[interface].length;
 		for (let i = 0; i < numberOfAddresses; i++) {
@@ -690,9 +690,11 @@ function getNetworkInterfaces() {
 instance.prototype.update_variables = function (system) {
 	var self = this;
 	var variables = getNetworkInterfaces();
+	var ip = '';
 
 	for (let i=0; i < variables.length; i++) {
 		self.setVariable(variables[i].name, variables[i].address);
+		ip += variables[i].address + '\\n';
 	}
 
 	variables.push({
@@ -722,12 +724,18 @@ instance.prototype.update_variables = function (system) {
 		name: 'bind_ip'
 	});
 
+	variables.push({
+		label: 'IP of all network interfaces',
+		name: 'all_ip'
+	});
+
 	self.setVariable('instance_errors', 0);
 	self.setVariable('instance_warns', 0);
 	self.setVariable('instance_oks', 0);
 	self.setVariable('time_hms', '');
 	self.setVariable('time_hm', '');
 	self.setVariable('bind_ip', '');
+	self.setVariable('all_ip', ip);
 
 	self.setVariableDefinitions(variables);
 
