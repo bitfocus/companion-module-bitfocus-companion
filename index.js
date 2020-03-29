@@ -313,7 +313,7 @@ instance.prototype.init_actions = function(system) {
 				},
 				{
 					type: 'number',
-					label: 'Timeout (Milliseconds)',
+					label: 'Timeout (ms) (Set to 0 for no timeout)',
 					id: 'timeout',
 					default: 5,
 					min: 0,
