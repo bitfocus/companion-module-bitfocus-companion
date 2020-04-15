@@ -658,7 +658,7 @@ instance.prototype.action = function(action, extras) {
 	else if (id == 'exec') {
 		debug("Running path: '"+opt.path+"'");
 		exec(opt.path, {
-			timeout: opt.timeout
+			timeout: opt.timeout === undefined ? 5000 : opt.timeout
 		}, function(error, stdout, stderr) {
 
 				if (error) {
