@@ -313,11 +313,11 @@ instance.prototype.init_actions = function(system) {
 				},
 				{
 					type: 'number',
-					label: 'Timeout (ms) (Set to 0 for no timeout)',
+					label: 'Timeout (ms, between 500 and 20000)',
 					id: 'timeout',
 					default: 5000,
-					min: 0,
-					max: 10000,
+					min: 500,
+					max: 20000,
 					required: true
 				}
 			]
@@ -658,7 +658,7 @@ instance.prototype.action = function(action, extras) {
 	else if (id == 'exec') {
 		debug("Running path: '"+opt.path+"'");
 		exec(opt.path, {
-			timeout: opt.timeout === undefined ? 5000 : opt.timeout
+			timeout: opt.timeout
 		}, function(error, stdout, stderr) {
 
 				if (error) {
