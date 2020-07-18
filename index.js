@@ -34,10 +34,16 @@ function instance(system, id, config) {
 
 	self.time_interval = setInterval(function() {
 		const now = new Date();
-		const hhmm = (`0${now.getHours()}`).slice(-2) + ":" + (`0${now.getMinutes()}`).slice(-2);
-		const hhmmss = hhmm + ":" + (`0${now.getSeconds()}`).slice(-2);
+		const hh = (`0${now.getHours()}`).slice(-2);
+		const mm = (`0${now.getMinutes()}`).slice(-2);
+		const ss = (`0${now.getSeconds()}`).slice(-2);
+		const hhmm = hh + ":" + mm;
+		const hhmmss = hhmm + ":" + ss
 		self.setVariable('time_hms', hhmmss);
 		self.setVariable('time_hm', hhmm);
+		self.setVariable('time_h', hh);
+		self.setVariable('time_m', mm);
+		self.setVariable('time_s', ss);
 	}, 1000);
 
 	// super-constructor
@@ -719,6 +725,19 @@ instance.prototype.update_variables = function (system) {
 		label: 'Time of day (HH:MM)',
 		name: 'time_hm'
 	});
+	variables.push({
+		label: 'Time of day (HH)',
+		name: 'time_h'
+	});
+	variables.push({
+		label: 'Time of day (MM)',
+		name: 'time_m'
+	});
+	variables.push({
+		label: 'Time of day (SS)',
+		name: 'time_s'
+	});
+
 
 	variables.push({
 		label: 'Instances with errors',
@@ -748,6 +767,9 @@ instance.prototype.update_variables = function (system) {
 	self.setVariable('instance_oks', 0);
 	self.setVariable('time_hms', '');
 	self.setVariable('time_hm', '');
+	self.setVariable('time_h', '');
+	self.setVariable('time_m', '');
+	self.setVariable('time_s', '');
 	self.setVariable('bind_ip', '');
 	self.setVariable('all_ip', ip);
 
