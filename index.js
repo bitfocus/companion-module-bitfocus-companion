@@ -662,17 +662,17 @@ instance.prototype.action = function(action, extras) {
 	}
 
 	else if (id == 'exec') {
-		debug("Running path: '"+opt.path+"'");
-		exec(opt.path, {
-			timeout: opt.timeout === undefined ? 5000 : opt.timeout
-		}, function(error, stdout, stderr) {
-
+		if (opt.path !== undefined) {
+			debug("Running path: '"+opt.path+"'");
+			exec(opt.path, {
+				timeout: opt.timeout === undefined ? 5000 : opt.timeout
+			}, function(error, stdout, stderr) {
 				if (error) {
 					log('error', "Shell command failed. Guru meditation: " + JSON.stringify(error));
 					debug(error);
 				}
-
-		});
+			});
+		}
 	}
 
 	else if (id == 'app_exit') {
