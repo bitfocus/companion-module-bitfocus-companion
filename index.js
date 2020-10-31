@@ -447,6 +447,34 @@ instance.prototype.init_actions = function(system) {
 
 			]
 		},
+
+		'button_text': {
+			label: 'Button Text',
+			options: [
+				{
+					type: 'textinput',
+					label: 'Button Text',
+					id: 'label',
+					default: ''
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+
+			]
+		},
+
 		'textcolor': {
 			label: 'Button Text Color',
 			options: [
@@ -648,6 +676,10 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'textcolor') {
 		self.system.emit('bank_changefield', opt.page, opt.bank, 'color', opt.color);
+	}
+
+	else if (id == 'button_text') {
+		self.system.emit('bank_changefield', opt.page, opt.bank, 'text', opt.label);
 	}
 
 	else if (id == 'button_pressrelease') {
