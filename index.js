@@ -118,7 +118,7 @@ instance.prototype.upgrade15to32 = function(config, actions) {
 instance.prototype.bind_ip_get = function() {
 	var self = this;
 
-	system.emit('config_get', 'bind_ip', function (bind_ip) {
+	self.system.emit('config_get', 'bind_ip', function (bind_ip) {
 		self.setVariable('bind_ip', bind_ip);
 	});
 
