@@ -70,6 +70,7 @@ instance.prototype.init = function() {
 	self.instances = {};
 	self.active = {};
 	self.pages = {};
+	self.pageHistory = {};
 
 	self.CHOICES_INSTANCES = [];
 	self.CHOICES_SURFACES = [];
@@ -286,7 +287,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					id: 'page',
 					default: '1',
-					choices: self.CHOICES_PAGES
+					choices: [{ id: 'back', label: 'Back' }, { id: 'forward', label: 'Forward' }, ...self.CHOICES_PAGES]
 				}
 			]
 		},
@@ -565,10 +566,47 @@ instance.prototype.action = function(action, extras) {
 	else if (id == 'set_page') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
 
-		// Change page after this runloop
-		setImmediate(function () {
-			self.system.emit('device_page_set', surface, opt.page);
-		});
+		if (opt.page === 'back' || opt.page === 'forward') {
+			if (self.pageHistory[surface]) {
+				const pageDirection = opt.page === 'back' ? -1 : 1;
+				const pageIndex = self.pageHistory[surface].index + pageDirection;
+				const pageTarget = self.pageHistory[surface].history[pageIndex];
+
+				if (pageTarget !== undefined) {
+					setImmediate(function () {
+						self.system.emit('device_page_set', surface, pageTarget);
+					});
+
+					self.pageHistory[surface].index = pageIndex;
+				}
+			}
+		} else {
+			// Change page after this runloop
+			setImmediate(function () {
+				self.system.emit('device_page_set', surface, opt.page);
+			});
+
+			// Create page history object on first page change for a surface
+			if (!self.pageHistory[surface]) {
+				self.pageHistory[surface] = {
+					history: [opt.page],
+					index: 0
+				};
+			} else {
+				// Clear forward page history beyond current index, add new history entry, increment index;
+				self.pageHistory[surface].history = self.pageHistory[surface].history.slice(0, self.pageHistory[surface].index + 1);
+				self.pageHistory[surface].history.push(opt.page);
+				self.pageHistory[surface].index += 1;
+
+				// Limit the max history
+				const maxPageHistory = 100;
+				if (self.pageHistory[surface].history.length > maxPageHistory) {
+					const startIndex = self.pageHistory[surface].history.length - maxPageHistory;
+					const endIndex = self.pageHistory[surface].history.length;
+					self.pageHistory[surface].history = self.pageHistory[surface].history.slice(startIndex, endIndex);
+				}
+			}
+		}
 
 		/* 2-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
 			between a button press and release and 'releases' the correct page-bank
