@@ -40,7 +40,7 @@ function instance(system, id, config) {
 		const month = (`0${now.getMonth()+1}`).slice(-2);
 		const day = (`0${now.getDate()}`).slice(-2);
 		const hhmm = hh + ":" + mm;
-		const hhmmss = hhmm + ":" + ss
+		const hhmmss = hhmm + ":" + ss;
 		self.setVariable('date_y', now.getFullYear());
 		self.setVariable('date_m', month);
 		self.setVariable('date_d', day);
@@ -75,12 +75,15 @@ instance.prototype.init = function() {
 	self.CHOICES_INSTANCES = [];
 	self.CHOICES_SURFACES = [];
 	self.CHOICES_PAGES = [];
-
-	self.CHOICES_BANKS = [];
+	self.CHOICES_BANKS = [ { label: 'This button', id: 0 } ];
 
 	for (var bank = 1; bank <= global.MAX_BUTTONS; bank++) {
 		self.CHOICES_BANKS.push({ label: bank, id: bank });
 	}
+
+	self.BUTTON_ACTIONS = [
+		'button_pressrelease', 'button_press','button_release','button_text','textcolor','bgcolor','panic_one'
+	];
 
 	self.pages_getall();
 	self.addSystemCallback('page_update', self.pages_update.bind(self));
@@ -239,7 +242,8 @@ instance.prototype.init_actions = function(system) {
 		});
 	}
 
-	self.CHOICES_PAGES.length = 0;
+	self.CHOICES_PAGES = [ { label: 'This page', id: 0 } ];
+
 	for (var page in self.pages) {
 		var name = page;
 
@@ -252,7 +256,7 @@ instance.prototype.init_actions = function(system) {
 		});
 	}
 
-	self.system.emit('instance_actions', self.id, {
+	actions = {
 		'instance_control': {
 			label: 'Enable or disable instance',
 			options: [
@@ -370,14 +374,8 @@ instance.prototype.init_actions = function(system) {
 			options: [
 				{
 					type: 'dropdown',
-					label: 'Surface / controller',
-					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES
-				},
-				{
-					type: 'dropdown',
 					label: 'Page',
+					tooltip: 'What page is the button on?',
 					id: 'page',
 					default: '1',
 					choices: self.CHOICES_PAGES
@@ -385,11 +383,11 @@ instance.prototype.init_actions = function(system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
 					default: '1',
 					choices: self.CHOICES_BANKS
 				}
-
 			]
 		},
 
@@ -398,14 +396,8 @@ instance.prototype.init_actions = function(system) {
 			options: [
 				{
 					type: 'dropdown',
-					label: 'Surface / controller',
-					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES
-				},
-				{
-					type: 'dropdown',
 					label: 'Page',
+					tooltip: 'What page is the button on?',
 					id: 'page',
 					default: '1',
 					choices: self.CHOICES_PAGES
@@ -413,11 +405,11 @@ instance.prototype.init_actions = function(system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
 					default: '1',
 					choices: self.CHOICES_BANKS
 				}
-
 			]
 		},
 
@@ -426,14 +418,8 @@ instance.prototype.init_actions = function(system) {
 			options: [
 				{
 					type: 'dropdown',
-					label: 'Surface / controller',
-					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES
-				},
-				{
-					type: 'dropdown',
 					label: 'Page',
+					tooltip: 'What page is the button on?',
 					id: 'page',
 					default: '1',
 					choices: self.CHOICES_PAGES
@@ -441,11 +427,11 @@ instance.prototype.init_actions = function(system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
 					default: '1',
 					choices: self.CHOICES_BANKS
 				}
-
 			]
 		},
 
@@ -461,6 +447,7 @@ instance.prototype.init_actions = function(system) {
 				{
 					type: 'dropdown',
 					label: 'Page',
+					tooltip: 'What page is the button on?',
 					id: 'page',
 					default: '1',
 					choices: self.CHOICES_PAGES
@@ -468,11 +455,11 @@ instance.prototype.init_actions = function(system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
 					default: '1',
 					choices: self.CHOICES_BANKS
 				}
-
 			]
 		},
 
@@ -483,12 +470,12 @@ instance.prototype.init_actions = function(system) {
 					type: 'colorpicker',
 					label: 'Text Color',
 					id: 'color',
-					default: '0',
-					choices: self.CHOICES_SURFACES
+					default: '0'
 				},
 				{
 					type: 'dropdown',
 					label: 'Page',
+					tooltip: 'What page is the button on?',
 					id: 'page',
 					default: '1',
 					choices: self.CHOICES_PAGES
@@ -496,11 +483,11 @@ instance.prototype.init_actions = function(system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
 					default: '1',
 					choices: self.CHOICES_BANKS
 				}
-
 			]
 		},
 
@@ -511,12 +498,12 @@ instance.prototype.init_actions = function(system) {
 					type: 'colorpicker',
 					label: 'Background Color',
 					id: 'color',
-					default: '0',
-					choices: self.CHOICES_SURFACES
+					default: '0'
 				},
 				{
 					type: 'dropdown',
 					label: 'Page',
+					tooltip: 'What page is the button on?',
 					id: 'page',
 					default: '1',
 					choices: self.CHOICES_PAGES
@@ -524,15 +511,37 @@ instance.prototype.init_actions = function(system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
 					default: '1',
 					choices: self.CHOICES_BANKS
 				}
-
 			]
 		},
 		'rescan': {
 			label: 'Rescan USB for devices'
+		},
+
+		'panic_one': {
+			label: 'Abort actions on button',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+			]
 		},
 
 		'panic': {
@@ -545,7 +554,10 @@ instance.prototype.init_actions = function(system) {
 		'app_restart': {
 			label: 'Restart companion'
 		}
-	});
+	};
+
+	self.system.emit('instance_actions', self.id, actions);
+
 };
 
 instance.prototype.action = function(action, extras) {
@@ -553,6 +565,21 @@ instance.prototype.action = function(action, extras) {
 	var id = action.action;
 	var cmd;
 	var opt = action.options;
+	var thePage = 0;
+	var theBank = 0;
+
+	if (self.BUTTON_ACTIONS.includes(id)) {
+		if (0 == opt.bank) {    // 'this' button
+			thePage = extras.page;
+			theBank = extras.bank;
+		} else if (0 == opt.page) {	// 'this' page
+			thePage = extras.page;
+			theBank = opt.bank;
+		} else {
+			thePage = opt.page;
+			theBank = opt.bank;
+		}
+	}
 
 	// get userconfig object
 	self.system.emit('get_userconfig', function(userconfig) {
@@ -704,36 +731,40 @@ instance.prototype.action = function(action, extras) {
 		self.system.emit('action_delayed_abort');
 	}
 
+	else if (id == 'panic_one') {
+		self.system.emit('action_abort_one', [ thePage, theBank ]);
+	}
+
 	else if (id == 'rescan') {
 		self.system.emit('devices_reenumerate');
 	}
 
 	else if (id == 'bgcolor') {
-		self.system.emit('bank_changefield', opt.page, opt.bank, 'bgcolor', opt.color);
+		self.system.emit('bank_changefield', thePage, theBank, 'bgcolor', opt.color);
 	}
 
 	else if (id == 'textcolor') {
-		self.system.emit('bank_changefield', opt.page, opt.bank, 'color', opt.color);
+		self.system.emit('bank_changefield', thePage, theBank, 'color', opt.color);
 	}
 
 	else if (id == 'button_text') {
-		self.system.emit('bank_changefield', opt.page, opt.bank, 'text', opt.label);
+		self.system.emit('bank_changefield', thePage, theBank, 'text', opt.label);
 	}
 
 	else if (id == 'button_pressrelease') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.system.emit('bank_pressed', opt.page, opt.bank, true, surface);
-		self.system.emit('bank_pressed', opt.page, opt.bank, false, surface);
+		self.system.emit('bank_pressed', thePage, theBank, true, surface);
+		self.system.emit('bank_pressed', thePage, theBank, false, surface);
 	}
 
 	else if (id == 'button_press') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.system.emit('bank_pressed', opt.page, opt.bank, true, surface);
+		self.system.emit('bank_pressed', thePage, theBank, true, surface);
 	}
 
 	else if (id == 'button_release') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.system.emit('bank_pressed', opt.page, opt.bank, false, surface);
+		self.system.emit('bank_pressed', thePage, theBank, false, surface);
 	}
 
 	else if (id == 'exec') {
@@ -779,8 +810,6 @@ function getNetworkInterfaces() {
 
 	return interfaces;
 }
-
-
 
 instance.prototype.update_variables = function (system) {
 	var self = this;
