@@ -40,7 +40,7 @@ function instance(system, id, config) {
 		const month = (`0${now.getMonth()+1}`).slice(-2);
 		const day = (`0${now.getDate()}`).slice(-2);
 		const hhmm = hh + ":" + mm;
-		const hhmmss = hhmm + ":" + ss
+		const hhmmss = hhmm + ":" + ss;
 		self.setVariable('date_y', now.getFullYear());
 		self.setVariable('date_m', month);
 		self.setVariable('date_d', day);
@@ -74,12 +74,15 @@ instance.prototype.init = function() {
 	self.CHOICES_INSTANCES = [];
 	self.CHOICES_SURFACES = [];
 	self.CHOICES_PAGES = [];
-
-	self.CHOICES_BANKS = [];
+	self.CHOICES_BANKS = [ { label: 'This button', id: 0 } ];
 
 	for (var bank = 1; bank <= global.MAX_BUTTONS; bank++) {
 		self.CHOICES_BANKS.push({ label: bank, id: bank });
 	}
+
+	self.BUTTON_ACTIONS = [
+		'button_pressrelease', 'button_press','button_release','button_text','textcolor','bgcolor','panic_one'
+	];
 
 	self.pages_getall();
 	self.addSystemCallback('page_update', self.pages_update.bind(self));
@@ -238,7 +241,8 @@ instance.prototype.init_actions = function(system) {
 		});
 	}
 
-	self.CHOICES_PAGES.length = 0;
+	self.CHOICES_PAGES = [ { label: 'This page', id: 0 } ];
+
 	for (var page in self.pages) {
 		var name = page;
 
@@ -250,10 +254,6 @@ instance.prototype.init_actions = function(system) {
 			id: page
 		});
 	}
-
-	self.BUTTON_ACTIONS = [
-		'button_pressrelease', 'button_press','button_release','button_text','textcolor','bgcolor','panic_one'
-	]
 
 	actions = {
 		'instance_control': {
@@ -370,17 +370,68 @@ instance.prototype.init_actions = function(system) {
 
 		'button_pressrelease': {
 			label: 'Button press and release',
-			options: []
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+			]
 		},
 
 		'button_press': {
 			label: 'Button Press',
-			options: []
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+			]
 		},
 
 		'button_release': {
 			label: 'Button Release',
-			options: []
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+			]
 		},
 
 		'button_text': {
@@ -391,6 +442,22 @@ instance.prototype.init_actions = function(system) {
 					label: 'Button Text',
 					id: 'label',
 					default: ''
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
 				}
 			]
 		},
@@ -403,6 +470,22 @@ instance.prototype.init_actions = function(system) {
 					label: 'Text Color',
 					id: 'color',
 					default: '0'
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
 				}
 			]
 		},
@@ -415,6 +498,22 @@ instance.prototype.init_actions = function(system) {
 					label: 'Background Color',
 					id: 'color',
 					default: '0'
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
 				}
 			]
 		},
@@ -424,7 +523,24 @@ instance.prototype.init_actions = function(system) {
 
 		'panic_one': {
 			label: 'Abort actions on button',
-			options: []
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '1',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Choosing This Button will ignore choice of Page',
+					id: 'bank',
+					default: '1',
+					choices: self.CHOICES_BANKS
+				}
+			]
 		},
 
 		'panic': {
@@ -438,25 +554,6 @@ instance.prototype.init_actions = function(system) {
 			label: 'Restart companion'
 		}
 	};
-
-	for (var act of self.BUTTON_ACTIONS) {
-		actions[act].options.push({
-			type: 'dropdown',
-			label: 'Page',
-			tooltip: 'What page is the button on?',
-			id: 'page',
-			default: '1',
-			choices: [].concat({label: "This page", id: 0},self.CHOICES_PAGES)
-		});
-		actions[act].options.push({
-			type: 'dropdown',
-			label: 'Bank',
-			tooltip: 'Choosing This Button will ignore choice of Page',
-			id: 'bank',
-			default: '1',
-			choices: [].concat({label: "This button", id: 0},self.CHOICES_BANKS)
-		});
-	}
 
 	self.system.emit('instance_actions', self.id, actions);
 
@@ -675,8 +772,6 @@ function getNetworkInterfaces() {
 
 	return interfaces;
 }
-
-
 
 instance.prototype.update_variables = function (system) {
 	var self = this;
