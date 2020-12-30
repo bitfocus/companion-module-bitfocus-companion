@@ -277,7 +277,7 @@ instance.prototype.init_actions = function(system) {
 			]
 		},
 		'set_page': {
-			label: 'Set surface to page',
+			label: 'Set surface with s/n to page',
 			options: [
 				{
 					type: 'dropdown',
@@ -285,6 +285,29 @@ instance.prototype.init_actions = function(system) {
 					id: 'controller',
 					default: 'self',
 					choices: self.CHOICES_SURFACES
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					id: 'page',
+					default: '1',
+					choices: [{ id: 'back', label: 'Back' }, { id: 'forward', label: 'Forward' }, ...self.CHOICES_PAGES]
+				}
+			]
+		},
+		'set_page_byindex': {
+			label: 'Set surface with index to page',
+				options: [
+				{
+					type: 'number',
+					label: 'Surface / controller',
+					id: 'controller',
+					tooltip: 'Emulator is 0, all other controllers in order of type and serial-number',
+					min: 0,
+					max: 100,
+					default: 0,
+					required: true,
+					range: false
 				},
 				{
 					type: 'dropdown',
@@ -592,56 +615,16 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'set_page') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		self.changeControllerPage(surface, opt.page);
+	}
 
-		if (opt.page === 'back' || opt.page === 'forward') {
-			if (self.pageHistory[surface]) {
-				const pageDirection = opt.page === 'back' ? -1 : 1;
-				const pageIndex = self.pageHistory[surface].index + pageDirection;
-				const pageTarget = self.pageHistory[surface].history[pageIndex];
-
-				if (pageTarget !== undefined) {
-					setImmediate(function () {
-						self.system.emit('device_page_set', surface, pageTarget);
-					});
-
-					self.pageHistory[surface].index = pageIndex;
-				}
-			}
+	else if (id == 'set_page_byindex') {
+		if (opt.controller < self.devices.length) {
+			var surface = self.devices[opt.controller].serialnumber;
+			self.changeControllerPage(surface, opt.page);
 		} else {
-			// Change page after this runloop
-			setImmediate(function () {
-				self.system.emit('device_page_set', surface, opt.page);
-			});
-
-			// Create page history object on first page change for a surface
-			if (!self.pageHistory[surface]) {
-				self.pageHistory[surface] = {
-					history: [opt.page],
-					index: 0
-				};
-			} else {
-				// Clear forward page history beyond current index, add new history entry, increment index;
-				self.pageHistory[surface].history = self.pageHistory[surface].history.slice(0, self.pageHistory[surface].index + 1);
-				self.pageHistory[surface].history.push(opt.page);
-				self.pageHistory[surface].index += 1;
-
-				// Limit the max history
-				const maxPageHistory = 100;
-				if (self.pageHistory[surface].history.length > maxPageHistory) {
-					const startIndex = self.pageHistory[surface].history.length - maxPageHistory;
-					const endIndex = self.pageHistory[surface].history.length;
-					self.pageHistory[surface].history = self.pageHistory[surface].history.slice(startIndex, endIndex);
-				}
-			}
+			self.log('warn',"Trying to set controller #" + opt.controller +" but only " + self.devices.length + " controller(s) are available.");
 		}
-
-		/* 2-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
-			between a button press and release and 'releases' the correct page-bank
-		// If we change page while pushing a button, we need to tell the button that we were done with it
-		// TODO: Somehow handle the futile "action_release" of the same button on the new page
-		if (surface == extras.deviceid) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
-		} */
 	}
 
 	else if (id == 'lockout_device') {
@@ -790,6 +773,63 @@ instance.prototype.action = function(action, extras) {
 	}
 
 };
+
+instance.prototype.changeControllerPage = function(surface, page) {
+	var self = this;
+
+	if (page === 'back' || page === 'forward') {
+		if (self.pageHistory[surface]) {
+			const pageDirection = page === 'back' ? -1 : 1;
+			const pageIndex = self.pageHistory[surface].index + pageDirection;
+			const pageTarget = self.pageHistory[surface].history[pageIndex];
+
+			if (pageTarget !== undefined) {
+				setImmediate(function () {
+					self.system.emit('device_page_set', surface, pageTarget);
+				});
+
+				self.pageHistory[surface].index = pageIndex;
+			}
+		}
+	} else {
+		// Change page after this runloop
+		setImmediate(function () {
+			self.system.emit('device_page_set', surface, page);
+		});
+
+		// Create page history object on first page change for a surface
+		if (!self.pageHistory[surface]) {
+			self.pageHistory[surface] = {
+				history: [page],
+				index: 0
+			};
+		} else {
+			// Clear forward page history beyond current index, add new history entry, increment index;
+			self.pageHistory[surface].history = self.pageHistory[surface].history.slice(0, self.pageHistory[surface].index + 1);
+			self.pageHistory[surface].history.push(page);
+			self.pageHistory[surface].index += 1;
+
+			// Limit the max history
+			const maxPageHistory = 100;
+			if (self.pageHistory[surface].history.length > maxPageHistory) {
+				const startIndex = self.pageHistory[surface].history.length - maxPageHistory;
+				const endIndex = self.pageHistory[surface].history.length;
+				self.pageHistory[surface].history = self.pageHistory[surface].history.slice(startIndex, endIndex);
+			}
+		}
+	}
+
+	/* 2-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
+		between a button press and release and 'releases' the correct page-bank
+	// If we change page while pushing a button, we need to tell the button that we were done with it
+	// TODO: Somehow handle the futile "action_release" of the same button on the new page
+	if (surface == extras.deviceid) {
+		self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
+	} */
+
+	return;
+};
+
 
 function getNetworkInterfaces() {
 	var interfaces = [];

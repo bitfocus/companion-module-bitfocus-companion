@@ -1,6 +1,6 @@
 {
 	"name": "bitfocus-companion",
-	"version": "1.0.13",
+	"version": "1.1.0",
 	"api_version": "1.0.0",
 	"description": "Internal functions",
 	"keywords": [ ],
@@ -17,6 +17,14 @@
 	},
 	"author": "Håkon Nessjøen <haakon@bitfocus.io>",
 	"license": "MIT",
+	"contributors": [
+		"William Viker <william@trippelm.no>",
+		"Matt Foulks <mfoulks1@gmail.com>",
+		"JeffreyDavidsz <jeffrey.davidsz@vicreo.eu>",
+		"Jeff Martin <dist@dist.dev>",
+		"John A Knight Jr <istnv@ayesti.com>",
+		"Dorian Meid <dnmeid@gmx.net>"
+	],
 	"bugs": {
 		"url": "https://github.com/bitfocus/companion-module-bitfous-companion/issues"
 	},
