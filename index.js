@@ -57,6 +57,9 @@ function instance(system, id, config) {
 	// Version 1 = from 15 to 32 keys config
 	self.addUpgradeScript(self.upgrade15to32.bind(self));
 
+	// rename for consistency
+	self.addUpgradeScript(self.upgrade_one2bank.bind(self));
+
 	return self;
 }
 
@@ -82,7 +85,7 @@ instance.prototype.init = function() {
 	}
 
 	self.BUTTON_ACTIONS = [
-		'button_pressrelease', 'button_press','button_release','button_text','textcolor','bgcolor','panic_one'
+		'button_pressrelease', 'button_press','button_release','button_text','textcolor','bgcolor','panic_bank'
 	];
 
 	self.pages_getall();
@@ -117,6 +120,27 @@ instance.prototype.upgrade15to32 = function(config, actions) {
 			});
 		}
 	}
+};
+
+instance.prototype.upgrade_one2bank = function(config, actions, upActions) {
+	var changed = false;
+
+	function upgrade(actions) {
+		for (var i = 0; i < actions.length; ++i) {
+			var action = actions[i];
+
+			if ('panic_one' == action.action) {
+				action.action = 'panic_bank';
+				action.label = action.instance + ":" + action.action;
+				changed = true;
+			}
+		}
+		return changed;
+	}
+	changed = upgrade(actions);
+	changed == (upgrade(upActions) || changed);
+
+	return changed;
 };
 
 instance.prototype.bind_ip_get = function() {
@@ -545,7 +569,7 @@ instance.prototype.init_actions = function(system) {
 			label: 'Rescan USB for devices'
 		},
 
-		'panic_one': {
+		'panic_bank': {
 			label: 'Abort actions on button',
 			options: [
 				{
@@ -714,8 +738,8 @@ instance.prototype.action = function(action, extras) {
 		self.system.emit('action_delayed_abort');
 	}
 
-	else if (id == 'panic_one') {
-		self.system.emit('action_abort_one', [ thePage, theBank ]);
+	else if (id == 'panic_bank') {
+		self.system.emit('action_abort_bank', thePage, theBank);
 	}
 
 	else if (id == 'rescan') {
