@@ -138,7 +138,7 @@ instance.prototype.upgrade_one2bank = function(config, actions, upActions) {
 		return changed;
 	}
 	changed = upgrade(actions);
-	changed == (upgrade(upActions) || changed);
+	changed = (upgrade(upActions) || changed);
 
 	return changed;
 };
