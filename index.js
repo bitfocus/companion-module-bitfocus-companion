@@ -587,6 +587,12 @@ instance.prototype.init_actions = function(system) {
 					id: 'bank',
 					default: '1',
 					choices: self.CHOICES_BANKS
+				},
+				{	
+					type: 'checkbox',
+					label: 'Unlatch?',
+					id: 'unlatch',
+					default: false,
 				}
 			]
 		},
@@ -739,7 +745,7 @@ instance.prototype.action = function(action, extras) {
 	}
 
 	else if (id == 'panic_bank') {
-		self.system.emit('action_abort_bank', thePage, theBank);
+		self.system.emit('action_abort_bank', thePage, theBank, opt.unlatch);
 	}
 
 	else if (id == 'rescan') {
