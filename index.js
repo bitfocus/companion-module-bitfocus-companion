@@ -936,19 +936,19 @@ instance.prototype.update_variables = function (system) {
 				type: 'colorpicker',
 				label: 'OK background color',
 				id: 'ok_bg',
-				default: self.rgb(0, 255, 0)
+				default: self.rgb(0, 200, 0)
 			},
 			{
 				type: 'colorpicker',
 				label: 'Warning foreground color',
 				id: 'warning_fg',
-				default: self.rgb(255, 255, 255)
+				default: self.rgb(0, 0, 0)
 			},
 			{
 				type: 'colorpicker',
 				label: 'Warning background color',
 				id: 'warning_bg',
-				default: self.rgb(255, 192, 0)
+				default: self.rgb(255, 255, 0)
 			},
 			{
 				type: 'colorpicker',
@@ -960,7 +960,7 @@ instance.prototype.update_variables = function (system) {
 				type: 'colorpicker',
 				label: 'Error background color',
 				id: 'error_bg',
-				default: self.rgb(255, 0, 0)
+				default: self.rgb(200, 0, 0)
 			},
 		]
 	};
