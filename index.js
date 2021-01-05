@@ -925,7 +925,44 @@ instance.prototype.update_variables = function (system) {
 	feedbacks['instance_status'] = {
 		label: 'Companion Instance Status',
 		description: 'If any companion instance encounters any errors, this will turn red',
-		options: []
+		options: [
+			{
+				type: 'colorpicker',
+				label: 'OK foreground color',
+				id: 'ok_fg',
+				default: self.rgb(255, 255, 255)
+			},
+			{
+				type: 'colorpicker',
+				label: 'OK background color',
+				id: 'ok_bg',
+				default: self.rgb(0, 255, 0)
+			},
+			{
+				type: 'colorpicker',
+				label: 'Warning foreground color',
+				id: 'warning_fg',
+				default: self.rgb(255, 255, 255)
+			},
+			{
+				type: 'colorpicker',
+				label: 'Warning background color',
+				id: 'warning_bg',
+				default: self.rgb(255, 192, 0)
+			},
+			{
+				type: 'colorpicker',
+				label: 'Error background color',
+				id: 'error_fg',
+				default: self.rgb(255, 255, 255)
+			},
+			{
+				type: 'colorpicker',
+				label: 'Error background color',
+				id: 'error_bg',
+				default: self.rgb(255, 0, 0)
+			},
+		]
 	};
 
 	self.setFeedbackDefinitions(feedbacks);
@@ -938,21 +975,21 @@ instance.prototype.feedback = function(feedback, bank) {
 
 		if (self.instance_errors > 0) {
 			return {
-				color: self.rgb(255,255,255),
-				bgcolor: self.rgb(200,0,0)
+				color: feedback.options.error_fg,
+				bgcolor: feedback.options.error_bg
 			};
 		}
 
 		if (self.instance_warns > 0) {
 			return {
-				color: self.rgb(0,0,0),
-				bgcolor: self.rgb(255,255,0)
+				color: feedback.options.warning_fg,
+				bgcolor: feedback.options.warning_bg
 			};
 		}
 
 		return {
-			color: self.rgb(255,255,255),
-			bgcolor: self.rgb(0,200,0)
+			color: feedback.options.ok_fg,
+			bgcolor: feedback.options.ok_bg
 		};
 
 
