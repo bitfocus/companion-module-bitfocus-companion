@@ -952,7 +952,7 @@ instance.prototype.update_variables = function (system) {
 			},
 			{
 				type: 'colorpicker',
-				label: 'Error background color',
+				label: 'Error foreground color',
 				id: 'error_fg',
 				default: self.rgb(255, 255, 255)
 			},
