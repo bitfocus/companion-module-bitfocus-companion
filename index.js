@@ -424,7 +424,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -432,7 +432,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -446,7 +446,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -454,7 +454,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -468,7 +468,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -476,7 +476,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -496,7 +496,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -504,7 +504,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -524,7 +524,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -532,7 +532,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -552,7 +552,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -560,7 +560,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -577,7 +577,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -585,10 +585,10 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				},
-				{	
+				{
 					type: 'checkbox',
 					label: 'Unlatch?',
 					id: 'unlatch',
@@ -618,19 +618,16 @@ instance.prototype.action = function(action, extras) {
 	var id = action.action;
 	var cmd;
 	var opt = action.options;
-	var thePage = 0;
-	var theBank = 0;
+	var thePage = opt.page;
+	var theBank = opt.bank;
 
 	if (self.BUTTON_ACTIONS.includes(id)) {
 		if (0 == opt.bank) {    // 'this' button
 			thePage = extras.page;
 			theBank = extras.bank;
-		} else if (0 == opt.page) {	// 'this' page
+		}
+		if (0 == opt.page) {	// 'this' page
 			thePage = extras.page;
-			theBank = opt.bank;
-		} else {
-			thePage = opt.page;
-			theBank = opt.bank;
 		}
 	}
 
@@ -645,13 +642,13 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'set_page') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.changeControllerPage(surface, opt.page);
+		self.changeControllerPage(surface, thePage);
 	}
 
 	else if (id == 'set_page_byindex') {
 		if (opt.controller < self.devices.length) {
 			var surface = self.devices[opt.controller].serialnumber;
-			self.changeControllerPage(surface, opt.page);
+			self.changeControllerPage(surface, thePage);
 		} else {
 			self.log('warn',"Trying to set controller #" + opt.controller +" but only " + self.devices.length + " controller(s) are available.");
 		}
