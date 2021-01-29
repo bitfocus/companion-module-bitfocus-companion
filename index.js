@@ -933,6 +933,11 @@ instance.prototype.update_variables = function (system) {
 		name: 'all_ip'
 	});
 
+	variables.push({
+		label: 'T-bar position',
+		name: 't-bar'
+	});
+
 	self.setVariable('instance_errors', 0);
 	self.setVariable('instance_warns', 0);
 	self.setVariable('instance_oks', 0);
@@ -943,6 +948,7 @@ instance.prototype.update_variables = function (system) {
 	self.setVariable('time_s', '');
 	self.setVariable('bind_ip', '');
 	self.setVariable('all_ip', ip);
+	self.setVariable('t-bar', '');
 
 	self.setVariableDefinitions(variables);
 
