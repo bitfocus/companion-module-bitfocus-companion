@@ -18,12 +18,14 @@ function instance(system, id, config) {
 	self.instance_errors = 0;
 	self.instance_warns = 0;
 	self.instance_oks = 0;
+	self.instance_status = {};
 
 	self.system.on('instance_errorcount', function(errcount) {
 
+		self.instance_status = errcount[3];
 		self.instance_errors = errcount[2];
-		self.instance_warns = errcount[1];
-		self.instance_oks = errcount[0];
+		self.instance_warns  = errcount[1];
+		self.instance_oks    = errcount[0];
 
 		self.setVariable('instance_errors', self.instance_errors);
 		self.setVariable('instance_warns', self.instance_warns);
@@ -201,6 +203,8 @@ instance.prototype.instance_getall = function(instances, active) {
 	}
 
 	self.init_actions();
+
+	self.refresh_feedback();
 };
 
 instance.prototype.addSystemCallback = function(name, cb) {
@@ -952,13 +956,34 @@ instance.prototype.update_variables = function (system) {
 
 	self.setVariableDefinitions(variables);
 
-	// feedbacks
+	self.refresh_feedback();
+};
+
+instance.prototype.refresh_feedback = function() {
 	var feedbacks = {};
+
+	var instance_choices = [];
+
+	Object.entries(self.instances).forEach(entry => {
+		const [key, value] = entry;
+		if(value.label == 'internal') {
+			instance_choices.push({id: 'all', label: "All Instances"});
+		} else {
+			instance_choices.push({id: key, label: value.label});
+		}
+	});
 
 	feedbacks['instance_status'] = {
 		label: 'Companion Instance Status',
 		description: 'If any companion instance encounters any errors, this will turn red',
-		options: []
+		options: [
+			{
+				type : "dropdown",
+				label : "Instance",
+				id : "instance_id",
+				choices : instance_choices
+			}
+		]
 	};
 
 	self.setFeedbackDefinitions(feedbacks);
@@ -968,6 +993,29 @@ instance.prototype.feedback = function(feedback, bank) {
 	var self = this;
 
 	if (feedback.type == 'instance_status') {
+		if (self.instance_status.hasOwnProperty(feedback.options.instance_id)) {
+			var cur_instance = self.instance_status[feedback.options.instance_id];
+
+			if (cur_instance[0] == 2) {
+				return {
+					color: self.rgb(255,255,255),
+					bgcolor: self.rgb(200,0,0)
+				};
+			}
+
+			if (cur_instance[0] == 1) {
+				return {
+					color: self.rgb(0,0,0),
+					bgcolor: self.rgb(255,255,0)
+				};
+			}
+
+			return {
+				color: self.rgb(255,255,255),
+				bgcolor: self.rgb(0,200,0)
+			};
+		}
+		
 
 		if (self.instance_errors > 0) {
 			return {
