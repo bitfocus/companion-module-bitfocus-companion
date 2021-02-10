@@ -948,7 +948,7 @@ instance.prototype.update_variables = function (system) {
 	self.setVariable('time_s', '');
 	self.setVariable('bind_ip', '');
 	self.setVariable('all_ip', ip);
-	self.setVariable('t-bar', '');
+	self.setVariable('t-bar', '0');
 
 	self.setVariableDefinitions(variables);
 
