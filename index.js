@@ -938,6 +938,16 @@ instance.prototype.update_variables = function (system) {
 		name: 't-bar'
 	});
 
+	variables.push({
+		label: 'Shuttle position',
+		name: 'shuttle'
+	});
+
+	variables.push({
+		label: 'Jog position',
+		name: 'jog'
+	});
+
 	self.setVariable('instance_errors', 0);
 	self.setVariable('instance_warns', 0);
 	self.setVariable('instance_oks', 0);
