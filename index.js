@@ -88,6 +88,10 @@ instance.prototype.init = function() {
 		'button_pressrelease', 'button_press','button_release','button_text','textcolor','bgcolor','panic_bank'
 	];
 
+	self.PAGE_ACTIONS = [
+		'set_page', 'set_page_byindex', 'inc_page', 'dec_page'
+	];
+	
 	self.pages_getall();
 	self.addSystemCallback('page_update', self.pages_update.bind(self));
 
@@ -626,6 +630,12 @@ instance.prototype.action = function(action, extras) {
 			thePage = extras.page;
 			theBank = extras.bank;
 		}
+		if (0 == opt.page) {	// 'this' page
+			thePage = extras.page;
+		}
+	}
+
+	if (self.PAGE_ACTIONS.includes(id)) {
 		if (0 == opt.page) {	// 'this' page
 			thePage = extras.page;
 		}
