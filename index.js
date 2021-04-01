@@ -804,6 +804,7 @@ instance.prototype.changeControllerPage = function(surface, page, from) {
 		const pageIndex = self.pageHistory[surface].index + pageDirection;
 		const pageTarget = self.pageHistory[surface].history[pageIndex];
 
+		// change only if pageIndex points to a real page
 		if (pageTarget !== undefined) {
 			setImmediate(function () {
 				self.system.emit('device_page_set', surface, pageTarget);
@@ -817,13 +818,6 @@ instance.prototype.changeControllerPage = function(surface, page, from) {
 			self.system.emit('device_page_set', surface, page);
 		});
 
-		// Create page history object on first page change for a surface
-		// if (!self.pageHistory[surface]) {
-		// 	self.pageHistory[surface] = {
-		// 		history: [page],
-		// 		index: 0
-		// 	};
-		// } else {
 		// Clear forward page history beyond current index, add new history entry, increment index;
 		self.pageHistory[surface].history = self.pageHistory[surface].history.slice(0, self.pageHistory[surface].index + 1);
 		self.pageHistory[surface].history.push(page);
@@ -836,16 +830,7 @@ instance.prototype.changeControllerPage = function(surface, page, from) {
 			const endIndex = self.pageHistory[surface].history.length;
 			self.pageHistory[surface].history = self.pageHistory[surface].history.slice(startIndex, endIndex);
 		}
-		//}
 	}
-
-	/* 2-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
-		between a button press and release and 'releases' the correct page-bank
-	// If we change page while pushing a button, we need to tell the button that we were done with it
-	// TODO: Somehow handle the futile "action_release" of the same button on the new page
-	if (surface == extras.deviceid) {
-		self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
-	} */
 
 	return;
 };
@@ -996,12 +981,6 @@ instance.prototype.feedback = function(feedback, bank) {
 
 	}
 };
-
-
-
-
-
-
 
 
 instance_skel.extendedBy(instance);
