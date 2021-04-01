@@ -91,7 +91,7 @@ instance.prototype.init = function() {
 	self.PAGE_ACTIONS = [
 		'set_page', 'set_page_byindex', 'inc_page', 'dec_page'
 	];
-	
+
 	self.pages_getall();
 	self.addSystemCallback('page_update', self.pages_update.bind(self));
 
@@ -652,16 +652,26 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'set_page') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.changeControllerPage(surface, thePage);
+		self.changeControllerPage(surface, thePage, extras.page);
 	}
 
 	else if (id == 'set_page_byindex') {
 		if (opt.controller < self.devices.length) {
 			var surface = self.devices[opt.controller].serialnumber;
-			self.changeControllerPage(surface, thePage);
+			self.changeControllerPage(surface, thePage, extras.page);
 		} else {
 			self.log('warn',"Trying to set controller #" + opt.controller +" but only " + self.devices.length + " controller(s) are available.");
 		}
+	}
+
+	else if (id == 'inc_page') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		self.changeControllerPage(surface, Math.min(99,parseInt(extras.page) + 1), extras.page);
+	}
+
+	else if (id == 'dec_page') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		self.changeControllerPage(surface, Math.max(1,parseInt(extras.page) - 1), extras.page);
 	}
 
 	else if (id == 'lockout_device') {
@@ -710,41 +720,6 @@ instance.prototype.action = function(action, extras) {
 				self.system.emit('unlockoutall');
 			});
 		}
-	}
-
-	else if (id == 'inc_page') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-
-		// Change page after this runloop
-		setImmediate(function () {
-			self.system.emit('device_page_up', surface);
-		});
-		/* 8-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
-			between a button press and release and 'releases' the correct page-bank
-		// If we change page while pushing a button, we need to tell the button that we were done with it
-		// TODO: Somehow handle the futile "action_release" of the same button on the new page
-		if (surface == extras.deviceid) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
-		 }
-		*/
-	}
-
-	else if (id == 'dec_page') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-
-		// Change page after this runloop
-		setImmediate(function () {
-			self.system.emit('device_page_down', surface);
-		});
-
-		/* 8-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
-			between a button press and release and 'releases' the correct page-bank
-		 // If we change page while pushing a button, we need to tell the button that we were done with it
-		// TODO: Somehow handle the futile "action_release" of the same button on the new page
-		if (surface == extras.deviceid) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
-		}
-		*/
 	}
 
 	else if (id == 'panic') {
@@ -811,22 +786,30 @@ instance.prototype.action = function(action, extras) {
 
 };
 
-instance.prototype.changeControllerPage = function(surface, page) {
+instance.prototype.changeControllerPage = function(surface, page, from) {
 	var self = this;
 
+	// no history yet
+	// start with the current (from) page
+	if (!self.pageHistory[surface]) {
+		self.pageHistory[surface] = {
+			history: [from],
+			index: 0
+		}
+	}
+
+	// determine the 'to' page
 	if (page === 'back' || page === 'forward') {
-		if (self.pageHistory[surface]) {
-			const pageDirection = page === 'back' ? -1 : 1;
-			const pageIndex = self.pageHistory[surface].index + pageDirection;
-			const pageTarget = self.pageHistory[surface].history[pageIndex];
+		const pageDirection = page === 'back' ? -1 : 1;
+		const pageIndex = self.pageHistory[surface].index + pageDirection;
+		const pageTarget = self.pageHistory[surface].history[pageIndex];
 
-			if (pageTarget !== undefined) {
-				setImmediate(function () {
-					self.system.emit('device_page_set', surface, pageTarget);
-				});
+		if (pageTarget !== undefined) {
+			setImmediate(function () {
+				self.system.emit('device_page_set', surface, pageTarget);
+			});
 
-				self.pageHistory[surface].index = pageIndex;
-			}
+			self.pageHistory[surface].index = pageIndex;
 		}
 	} else {
 		// Change page after this runloop
@@ -835,25 +818,25 @@ instance.prototype.changeControllerPage = function(surface, page) {
 		});
 
 		// Create page history object on first page change for a surface
-		if (!self.pageHistory[surface]) {
-			self.pageHistory[surface] = {
-				history: [page],
-				index: 0
-			};
-		} else {
-			// Clear forward page history beyond current index, add new history entry, increment index;
-			self.pageHistory[surface].history = self.pageHistory[surface].history.slice(0, self.pageHistory[surface].index + 1);
-			self.pageHistory[surface].history.push(page);
-			self.pageHistory[surface].index += 1;
+		// if (!self.pageHistory[surface]) {
+		// 	self.pageHistory[surface] = {
+		// 		history: [page],
+		// 		index: 0
+		// 	};
+		// } else {
+		// Clear forward page history beyond current index, add new history entry, increment index;
+		self.pageHistory[surface].history = self.pageHistory[surface].history.slice(0, self.pageHistory[surface].index + 1);
+		self.pageHistory[surface].history.push(page);
+		self.pageHistory[surface].index += 1;
 
-			// Limit the max history
-			const maxPageHistory = 100;
-			if (self.pageHistory[surface].history.length > maxPageHistory) {
-				const startIndex = self.pageHistory[surface].history.length - maxPageHistory;
-				const endIndex = self.pageHistory[surface].history.length;
-				self.pageHistory[surface].history = self.pageHistory[surface].history.slice(startIndex, endIndex);
-			}
+		// Limit the max history
+		const maxPageHistory = 100;
+		if (self.pageHistory[surface].history.length > maxPageHistory) {
+			const startIndex = self.pageHistory[surface].history.length - maxPageHistory;
+			const endIndex = self.pageHistory[surface].history.length;
+			self.pageHistory[surface].history = self.pageHistory[surface].history.slice(startIndex, endIndex);
 		}
+		//}
 	}
 
 	/* 2-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
