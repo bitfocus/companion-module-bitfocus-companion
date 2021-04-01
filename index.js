@@ -627,7 +627,7 @@ instance.prototype.action = function(action, extras) {
 
 	if (self.BUTTON_ACTIONS.includes(id)) {
 		if (0 == opt.bank) {    // 'this' button
-			thePage = extras.page;
+//			thePage = extras.page;
 			theBank = extras.bank;
 		}
 		if (0 == opt.page) {	// 'this' page
