@@ -62,6 +62,30 @@ function instance(system, id, config) {
 	// rename for consistency
 	self.addUpgradeScript(self.upgrade_one2bank.bind(self));
 
+	// v1.1.4 > v1.1.5
+	self.addUpgradeScript((config, actions, releaseActions, feedbacks) => {
+		let changed = false
+
+		let checkUpgrade = (fb, changed) => {
+			switch (fb.type) {
+				case 'instance_status':
+					if ( fb.options.instance_id !== undefined ) {
+						fb.options.instance_id = 'all'
+						changed = true
+					}
+					break
+			}
+
+			return changed
+		}
+
+		for (let k in feedbacks) {
+			changed = checkUpgrade(feedbacks[k], changed)
+		}
+
+		return changed
+	})
+
 	return self;
 }
 
@@ -101,6 +125,7 @@ instance.prototype.init = function() {
 
 	self.status(self.STATE_OK);
 
+	self.init_feedback();
 	self.checkFeedbacks();
 	self.update_variables();
 
@@ -204,7 +229,7 @@ instance.prototype.instance_getall = function(instances, active) {
 
 	self.init_actions();
 
-	self.refresh_feedback();
+	self.init_feedback();
 };
 
 instance.prototype.addSystemCallback = function(name, cb) {
@@ -967,11 +992,9 @@ instance.prototype.update_variables = function (system) {
 	self.setVariable('shuttle', '0');
 
 	self.setVariableDefinitions(variables);
-
-	self.refresh_feedback();
 };
 
-instance.prototype.refresh_feedback = function() {
+instance.prototype.init_feedback = function() {
 	var feedbacks = {};
 
 	var instance_choices = [];
@@ -993,7 +1016,8 @@ instance.prototype.refresh_feedback = function() {
 				type : "dropdown",
 				label : "Instance",
 				id : "instance_id",
-				choices : instance_choices
+				choices : instance_choices,
+				default: 'all'
 			}
 		]
 	};
