@@ -18,12 +18,14 @@ function instance(system, id, config) {
 	self.instance_errors = 0;
 	self.instance_warns = 0;
 	self.instance_oks = 0;
+	self.instance_status = {};
 
 	self.system.on('instance_errorcount', function(errcount) {
 
+		self.instance_status = errcount[3];
 		self.instance_errors = errcount[2];
-		self.instance_warns = errcount[1];
-		self.instance_oks = errcount[0];
+		self.instance_warns  = errcount[1];
+		self.instance_oks    = errcount[0];
 
 		self.setVariable('instance_errors', self.instance_errors);
 		self.setVariable('instance_warns', self.instance_warns);
@@ -57,6 +59,57 @@ function instance(system, id, config) {
 	// Version 1 = from 15 to 32 keys config
 	self.addUpgradeScript(self.upgrade15to32.bind(self));
 
+	// rename for consistency
+	self.addUpgradeScript(self.upgrade_one2bank.bind(self));
+
+	// v1.1.3 > v1.1.4
+	self.addUpgradeScript((config, actions, releaseActions, feedbacks) => {
+		let changed = false
+
+		let checkUpgrade = (fb, changed) => {
+			switch (fb.type) {
+				case 'instance_status':
+					if ( fb.options.instance_id === undefined ) {
+						fb.options.instance_id = 'all'
+						changed = true
+					}
+					if ( fb.options.ok_fg === undefined ) {
+						fb.options.ok_fg = self.rgb(255, 255, 255)
+						changed = true
+					}
+					if ( fb.options.ok_bg === undefined ) {
+						fb.options.ok_bg = self.rgb(0, 200, 0)
+						changed = true
+					}
+					if ( fb.options.warning_fg === undefined ) {
+						fb.options.warning_fg = self.rgb(0, 0, 0)
+						changed = true
+					}
+					if ( fb.options.warning_bg === undefined ) {
+						fb.options.warning_bg = self.rgb(255, 255, 0)
+						changed = true
+					}
+					if ( fb.options.error_fg === undefined ) {
+						fb.options.error_fg = self.rgb(255, 255, 255)
+						changed = true
+					}
+					if ( fb.options.error_bg === undefined ) {
+						fb.options.error_bg = self.rgb(200, 0, 0)
+						changed = true
+					}
+					break
+			}
+
+			return changed
+		}
+
+		for (let k in feedbacks) {
+			changed = checkUpgrade(feedbacks[k], changed)
+		}
+
+		return changed
+	})
+
 	return self;
 }
 
@@ -82,7 +135,11 @@ instance.prototype.init = function() {
 	}
 
 	self.BUTTON_ACTIONS = [
-		'button_pressrelease', 'button_press','button_release','button_text','textcolor','bgcolor','panic_one'
+		'button_pressrelease', 'button_press','button_release','button_text','textcolor','bgcolor','panic_bank'
+	];
+
+	self.PAGE_ACTIONS = [
+		'set_page', 'set_page_byindex', 'inc_page', 'dec_page'
 	];
 
 	self.pages_getall();
@@ -96,6 +153,7 @@ instance.prototype.init = function() {
 
 	self.status(self.STATE_OK);
 
+	self.init_feedback();
 	self.checkFeedbacks();
 	self.update_variables();
 
@@ -117,6 +175,27 @@ instance.prototype.upgrade15to32 = function(config, actions) {
 			});
 		}
 	}
+};
+
+instance.prototype.upgrade_one2bank = function(config, actions, upActions) {
+	var changed = false;
+
+	function upgrade(actions) {
+		for (var i = 0; i < actions.length; ++i) {
+			var action = actions[i];
+
+			if ('panic_one' == action.action) {
+				action.action = 'panic_bank';
+				action.label = action.instance + ":" + action.action;
+				changed = true;
+			}
+		}
+		return changed;
+	}
+	changed = upgrade(actions);
+	changed = (upgrade(upActions) || changed);
+
+	return changed;
 };
 
 instance.prototype.bind_ip_get = function() {
@@ -177,6 +256,8 @@ instance.prototype.instance_getall = function(instances, active) {
 	}
 
 	self.init_actions();
+
+	self.init_feedback();
 };
 
 instance.prototype.addSystemCallback = function(name, cb) {
@@ -400,7 +481,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -408,7 +489,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -422,7 +503,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -430,7 +511,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -444,7 +525,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -452,7 +533,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -472,7 +553,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -480,7 +561,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -500,7 +581,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -508,7 +589,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -528,7 +609,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -536,7 +617,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
 				}
 			]
@@ -545,7 +626,7 @@ instance.prototype.init_actions = function(system) {
 			label: 'Rescan USB for devices'
 		},
 
-		'panic_one': {
+		'panic_bank': {
 			label: 'Abort actions on button',
 			options: [
 				{
@@ -553,7 +634,7 @@ instance.prototype.init_actions = function(system) {
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_PAGES
 				},
 				{
@@ -561,8 +642,14 @@ instance.prototype.init_actions = function(system) {
 					label: 'Bank',
 					tooltip: 'Choosing This Button will ignore choice of Page',
 					id: 'bank',
-					default: '1',
+					default: '0',
 					choices: self.CHOICES_BANKS
+				},
+				{
+					type: 'checkbox',
+					label: 'Unlatch?',
+					id: 'unlatch',
+					default: false,
 				}
 			]
 		},
@@ -588,19 +675,22 @@ instance.prototype.action = function(action, extras) {
 	var id = action.action;
 	var cmd;
 	var opt = action.options;
-	var thePage = 0;
-	var theBank = 0;
+	var thePage = opt.page;
+	var theBank = opt.bank;
 
 	if (self.BUTTON_ACTIONS.includes(id)) {
 		if (0 == opt.bank) {    // 'this' button
-			thePage = extras.page;
+//			thePage = extras.page;
 			theBank = extras.bank;
-		} else if (0 == opt.page) {	// 'this' page
+		}
+		if (0 == opt.page) {	// 'this' page
 			thePage = extras.page;
-			theBank = opt.bank;
-		} else {
-			thePage = opt.page;
-			theBank = opt.bank;
+		}
+	}
+
+	if (self.PAGE_ACTIONS.includes(id)) {
+		if (0 == opt.page) {	// 'this' page
+			thePage = extras.page;
 		}
 	}
 
@@ -615,16 +705,26 @@ instance.prototype.action = function(action, extras) {
 
 	else if (id == 'set_page') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-		self.changeControllerPage(surface, opt.page);
+		self.changeControllerPage(surface, thePage, extras.page);
 	}
 
 	else if (id == 'set_page_byindex') {
 		if (opt.controller < self.devices.length) {
 			var surface = self.devices[opt.controller].serialnumber;
-			self.changeControllerPage(surface, opt.page);
+			self.changeControllerPage(surface, thePage, extras.page);
 		} else {
 			self.log('warn',"Trying to set controller #" + opt.controller +" but only " + self.devices.length + " controller(s) are available.");
 		}
+	}
+
+	else if (id == 'inc_page') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		self.changeControllerPage(surface, Math.min(99,parseInt(extras.page) + 1), extras.page);
+	}
+
+	else if (id == 'dec_page') {
+		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
+		self.changeControllerPage(surface, Math.max(1,parseInt(extras.page) - 1), extras.page);
 	}
 
 	else if (id == 'lockout_device') {
@@ -675,47 +775,12 @@ instance.prototype.action = function(action, extras) {
 		}
 	}
 
-	else if (id == 'inc_page') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-
-		// Change page after this runloop
-		setImmediate(function () {
-			self.system.emit('device_page_up', surface);
-		});
-		/* 8-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
-			between a button press and release and 'releases' the correct page-bank
-		// If we change page while pushing a button, we need to tell the button that we were done with it
-		// TODO: Somehow handle the futile "action_release" of the same button on the new page
-		if (surface == extras.deviceid) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
-		 }
-		*/
-	}
-
-	else if (id == 'dec_page') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller;
-
-		// Change page after this runloop
-		setImmediate(function () {
-			self.system.emit('device_page_down', surface);
-		});
-
-		/* 8-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
-			between a button press and release and 'releases' the correct page-bank
-		 // If we change page while pushing a button, we need to tell the button that we were done with it
-		// TODO: Somehow handle the futile "action_release" of the same button on the new page
-		if (surface == extras.deviceid) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
-		}
-		*/
-	}
-
 	else if (id == 'panic') {
 		self.system.emit('action_delayed_abort');
 	}
 
-	else if (id == 'panic_one') {
-		self.system.emit('action_abort_one', [ thePage, theBank ]);
+	else if (id == 'panic_bank') {
+		self.system.emit('action_abort_bank', thePage, theBank, opt.unlatch);
 	}
 
 	else if (id == 'rescan') {
@@ -774,22 +839,31 @@ instance.prototype.action = function(action, extras) {
 
 };
 
-instance.prototype.changeControllerPage = function(surface, page) {
+instance.prototype.changeControllerPage = function(surface, page, from) {
 	var self = this;
 
+	// no history yet
+	// start with the current (from) page
+	if (!self.pageHistory[surface]) {
+		self.pageHistory[surface] = {
+			history: [from],
+			index: 0
+		}
+	}
+
+	// determine the 'to' page
 	if (page === 'back' || page === 'forward') {
-		if (self.pageHistory[surface]) {
-			const pageDirection = page === 'back' ? -1 : 1;
-			const pageIndex = self.pageHistory[surface].index + pageDirection;
-			const pageTarget = self.pageHistory[surface].history[pageIndex];
+		const pageDirection = page === 'back' ? -1 : 1;
+		const pageIndex = self.pageHistory[surface].index + pageDirection;
+		const pageTarget = self.pageHistory[surface].history[pageIndex];
 
-			if (pageTarget !== undefined) {
-				setImmediate(function () {
-					self.system.emit('device_page_set', surface, pageTarget);
-				});
+		// change only if pageIndex points to a real page
+		if (pageTarget !== undefined) {
+			setImmediate(function () {
+				self.system.emit('device_page_set', surface, pageTarget);
+			});
 
-				self.pageHistory[surface].index = pageIndex;
-			}
+			self.pageHistory[surface].index = pageIndex;
 		}
 	} else {
 		// Change page after this runloop
@@ -797,35 +871,19 @@ instance.prototype.changeControllerPage = function(surface, page) {
 			self.system.emit('device_page_set', surface, page);
 		});
 
-		// Create page history object on first page change for a surface
-		if (!self.pageHistory[surface]) {
-			self.pageHistory[surface] = {
-				history: [page],
-				index: 0
-			};
-		} else {
-			// Clear forward page history beyond current index, add new history entry, increment index;
-			self.pageHistory[surface].history = self.pageHistory[surface].history.slice(0, self.pageHistory[surface].index + 1);
-			self.pageHistory[surface].history.push(page);
-			self.pageHistory[surface].index += 1;
+		// Clear forward page history beyond current index, add new history entry, increment index;
+		self.pageHistory[surface].history = self.pageHistory[surface].history.slice(0, self.pageHistory[surface].index + 1);
+		self.pageHistory[surface].history.push(page);
+		self.pageHistory[surface].index += 1;
 
-			// Limit the max history
-			const maxPageHistory = 100;
-			if (self.pageHistory[surface].history.length > maxPageHistory) {
-				const startIndex = self.pageHistory[surface].history.length - maxPageHistory;
-				const endIndex = self.pageHistory[surface].history.length;
-				self.pageHistory[surface].history = self.pageHistory[surface].history.slice(startIndex, endIndex);
-			}
+		// Limit the max history
+		const maxPageHistory = 100;
+		if (self.pageHistory[surface].history.length > maxPageHistory) {
+			const startIndex = self.pageHistory[surface].history.length - maxPageHistory;
+			const endIndex = self.pageHistory[surface].history.length;
+			self.pageHistory[surface].history = self.pageHistory[surface].history.slice(startIndex, endIndex);
 		}
 	}
-
-	/* 2-Jan-2020: fixed/obsolete. device.js now detects if a page change occurs
-		between a button press and release and 'releases' the correct page-bank
-	// If we change page while pushing a button, we need to tell the button that we were done with it
-	// TODO: Somehow handle the futile "action_release" of the same button on the new page
-	if (surface == extras.deviceid) {
-		self.system.emit('bank_pressed', extras.page, extras.bank, false, surface);
-	} */
 
 	return;
 };
@@ -906,6 +964,21 @@ instance.prototype.update_variables = function (system) {
 		name: 'all_ip'
 	});
 
+	variables.push({
+		label: 'T-bar position',
+		name: 't-bar'
+	});
+
+	variables.push({
+		label: 'Shuttle position',
+		name: 'shuttle'
+	});
+
+	variables.push({
+		label: 'Jog position',
+		name: 'jog'
+	});
+
 	self.setVariable('instance_errors', 0);
 	self.setVariable('instance_warns', 0);
 	self.setVariable('instance_oks', 0);
@@ -916,17 +989,39 @@ instance.prototype.update_variables = function (system) {
 	self.setVariable('time_s', '');
 	self.setVariable('bind_ip', '');
 	self.setVariable('all_ip', ip);
+	self.setVariable('t-bar', '0');
+	self.setVariable('jog', '0');
+	self.setVariable('shuttle', '0');
 
 	self.setVariableDefinitions(variables);
+};
 
-	// feedbacks
+instance.prototype.init_feedback = function() {
 	var feedbacks = {};
+
+	var instance_choices = [];
+
+	Object.entries(self.instances).forEach(entry => {
+		const [key, value] = entry;
+		if(value.label == 'internal') {
+			instance_choices.push({id: 'all', label: "All Instances"});
+		} else {
+			instance_choices.push({id: key, label: value.label});
+		}
+	});
 
 	feedbacks['instance_status'] = {
 		label: 'Companion Instance Status',
 		description: 'If any companion instance encounters any errors, this will turn red',
 		options: [
 			{
+				type : "dropdown",
+				label : "Instance",
+				id : "instance_id",
+				choices : instance_choices,
+				default: 'all'
+			},
+      {
 				type: 'colorpicker',
 				label: 'OK foreground color',
 				id: 'ok_fg',
@@ -972,6 +1067,29 @@ instance.prototype.feedback = function(feedback, bank) {
 	var self = this;
 
 	if (feedback.type == 'instance_status') {
+		if (self.instance_status.hasOwnProperty(feedback.options.instance_id)) {
+			var cur_instance = self.instance_status[feedback.options.instance_id];
+
+			if (cur_instance[0] == 2) {
+				return {
+					color: feedback.options.error_fg,
+					bgcolor: feedback.options.error_bg
+				};
+			}
+
+			if (cur_instance[0] == 1) {
+				return {
+					color: feedback.options.warning_fg,
+					bgcolor: feedback.options.warning_bg
+				};
+			}
+
+			return {
+				color: feedback.options.ok_fg,
+				bgcolor: feedback.options.ok_bg
+			};
+		}
+		
 
 		if (self.instance_errors > 0) {
 			return {
@@ -995,12 +1113,6 @@ instance.prototype.feedback = function(feedback, bank) {
 
 	}
 };
-
-
-
-
-
-
 
 
 instance_skel.extendedBy(instance);
