@@ -69,7 +69,7 @@ function instance(system, id, config) {
 		let checkUpgrade = (fb, changed) => {
 			switch (fb.type) {
 				case 'instance_status':
-					if ( fb.options.instance_id !== undefined ) {
+					if ( fb.options.instance_id === undefined ) {
 						fb.options.instance_id = 'all'
 						changed = true
 					}
