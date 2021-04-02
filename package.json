@@ -1,6 +1,6 @@
 {
 	"name": "bitfocus-companion",
-	"version": "1.1.3",
+	"version": "1.1.4",
 	"api_version": "1.0.0",
 	"description": "Internal functions",
 	"keywords": [ ],
@@ -23,7 +23,8 @@
 		"JeffreyDavidsz <jeffrey.davidsz@vicreo.eu>",
 		"Jeff Martin <dist@dist.dev>",
 		"John A Knight Jr <istnv@ayesti.com>",
-		"Dorian Meid <dnmeid@gmx.net>"
+		"Dorian Meid <dnmeid@gmx.net>",
+		"Bjorn Peterson <bjkarl@yahoo.comn>"
 	],
 	"bugs": {
 		"url": "https://github.com/bitfocus/companion-module-bitfous-companion/issues"
