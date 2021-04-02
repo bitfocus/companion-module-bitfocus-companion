@@ -62,7 +62,7 @@ function instance(system, id, config) {
 	// rename for consistency
 	self.addUpgradeScript(self.upgrade_one2bank.bind(self));
 
-	// v1.1.4 > v1.1.5
+	// v1.1.3 > v1.1.4
 	self.addUpgradeScript((config, actions, releaseActions, feedbacks) => {
 		let changed = false
 
@@ -71,6 +71,30 @@ function instance(system, id, config) {
 				case 'instance_status':
 					if ( fb.options.instance_id === undefined ) {
 						fb.options.instance_id = 'all'
+						changed = true
+					}
+					if ( fb.options.ok_fg === undefined ) {
+						fb.options.ok_fg = self.rgb(255, 255, 255)
+						changed = true
+					}
+					if ( fb.options.ok_bg === undefined ) {
+						fb.options.ok_bg = self.rgb(0, 200, 0)
+						changed = true
+					}
+					if ( fb.options.warning_fg === undefined ) {
+						fb.options.warning_fg = self.rgb(0, 0, 0)
+						changed = true
+					}
+					if ( fb.options.warning_bg === undefined ) {
+						fb.options.warning_bg = self.rgb(255, 255, 0)
+						changed = true
+					}
+					if ( fb.options.error_fg === undefined ) {
+						fb.options.error_fg = self.rgb(255, 255, 255)
+						changed = true
+					}
+					if ( fb.options.error_bg === undefined ) {
+						fb.options.error_bg = self.rgb(200, 0, 0)
 						changed = true
 					}
 					break
@@ -996,7 +1020,43 @@ instance.prototype.init_feedback = function() {
 				id : "instance_id",
 				choices : instance_choices,
 				default: 'all'
-			}
+			},
+      {
+				type: 'colorpicker',
+				label: 'OK foreground color',
+				id: 'ok_fg',
+				default: self.rgb(255, 255, 255)
+			},
+			{
+				type: 'colorpicker',
+				label: 'OK background color',
+				id: 'ok_bg',
+				default: self.rgb(0, 200, 0)
+			},
+			{
+				type: 'colorpicker',
+				label: 'Warning foreground color',
+				id: 'warning_fg',
+				default: self.rgb(0, 0, 0)
+			},
+			{
+				type: 'colorpicker',
+				label: 'Warning background color',
+				id: 'warning_bg',
+				default: self.rgb(255, 255, 0)
+			},
+			{
+				type: 'colorpicker',
+				label: 'Error foreground color',
+				id: 'error_fg',
+				default: self.rgb(255, 255, 255)
+			},
+			{
+				type: 'colorpicker',
+				label: 'Error background color',
+				id: 'error_bg',
+				default: self.rgb(200, 0, 0)
+			},
 		]
 	};
 
@@ -1012,42 +1072,42 @@ instance.prototype.feedback = function(feedback, bank) {
 
 			if (cur_instance[0] == 2) {
 				return {
-					color: self.rgb(255,255,255),
-					bgcolor: self.rgb(200,0,0)
+					color: feedback.options.error_fg,
+					bgcolor: feedback.options.error_bg
 				};
 			}
 
 			if (cur_instance[0] == 1) {
 				return {
-					color: self.rgb(0,0,0),
-					bgcolor: self.rgb(255,255,0)
+					color: feedback.options.warning_fg,
+					bgcolor: feedback.options.warning_bg
 				};
 			}
 
 			return {
-				color: self.rgb(255,255,255),
-				bgcolor: self.rgb(0,200,0)
+				color: feedback.options.ok_fg,
+				bgcolor: feedback.options.ok_bg
 			};
 		}
 		
 
 		if (self.instance_errors > 0) {
 			return {
-				color: self.rgb(255,255,255),
-				bgcolor: self.rgb(200,0,0)
+				color: feedback.options.error_fg,
+				bgcolor: feedback.options.error_bg
 			};
 		}
 
 		if (self.instance_warns > 0) {
 			return {
-				color: self.rgb(0,0,0),
-				bgcolor: self.rgb(255,255,0)
+				color: feedback.options.warning_fg,
+				bgcolor: feedback.options.warning_bg
 			};
 		}
 
 		return {
-			color: self.rgb(255,255,255),
-			bgcolor: self.rgb(0,200,0)
+			color: feedback.options.ok_fg,
+			bgcolor: feedback.options.ok_bg
 		};
 
 
