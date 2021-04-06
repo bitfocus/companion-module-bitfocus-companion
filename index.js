@@ -121,6 +121,7 @@ instance.prototype.init = function () {
 	self.instances = {}
 	self.active = {}
 	self.pages = {}
+	self.bank_info = {}
 	self.pageHistory = {}
 
 	self.CHOICES_INSTANCES = []
@@ -150,17 +151,22 @@ instance.prototype.init = function () {
 	self.devices_getall()
 	self.addSystemCallback('devices_list', self.devices_list.bind(self))
 
+	self.bind_ip_get()
+	self.addSystemCallback('ip_rebind', self.bind_ip_get.bind(self))
+
+	self.banks_getall()
+	self.addSystemCallback('graphics_bank_invalidate', self.bank_invalidate.bind(self))
+
 	self.instance_save()
 	self.addSystemCallback('instance_save', self.instance_save.bind(self))
 
-	self.status(self.STATE_OK)
-
-	self.init_feedback()
+	// A missing 'self' caused instance_save() to error
+	// before completion. This call is no longer necessary.
+	//self.init_feedback();
 	self.checkFeedbacks()
 	self.update_variables()
 
-	self.bind_ip_get()
-	self.addSystemCallback('ip_rebind', self.bind_ip_get.bind(self))
+	self.status(self.STATE_OK)
 }
 
 instance.prototype.upgrade15to32 = function (config, actions) {
@@ -221,6 +227,69 @@ instance.prototype.pages_update = function () {
 
 	// Update dropdowns
 	self.init_actions()
+}
+
+instance.prototype.banks_getall = function () {
+	var self = this
+
+	system.emit('db_get', 'bank', function (banks) {
+		self.banks = banks
+		for (var p in banks) {
+			for (var b in banks[p]) {
+				var tb = banks[p][b]
+				var k = `${p}_${b}`
+				var v = `b_text_${k}`
+				var newText
+				if (tb.style === 'png') {
+					// need a copy, not a reference
+					self.bank_info[k] = JSON.parse(JSON.stringify(tb))
+					newText = self.bank_info[k].text = self.check_var_recursion(v, tb.text)
+					self.setVariable(v, newText)
+				}
+			}
+		}
+	})
+}
+
+instance.prototype.check_var_recursion = function (v, realText) {
+	var self = this
+	var newText
+
+	if (realText) {
+		if (realText.includes(v)) {
+			// recursion error:
+			// button trying to include itself
+			newText = '$RE'
+		} else {
+			system.emit('variable_parse', realText, function (str) {
+				newText = str
+			})
+		}
+	}
+	return newText
+}
+
+instance.prototype.bank_invalidate = function (page, bank) {
+	var self = this
+	var k = `${page}_${bank}`
+	var v = `b_text_${k}`
+	var oldText
+	var newText
+	var realText = self.banks[page][bank].text
+
+	if (!self.bank_info[k]) {
+		// new key
+		self.bank_info[k] = JSON.parse(JSON.stringify(self.banks[page][bank]))
+	} else if (self.bank_info[k].text) {
+		oldText = self.bank_info[k].text
+	}
+
+	newText = self.check_var_recursion(v, realText)
+
+	if (oldText !== newText) {
+		self.bank_info[k].text = newText
+		self.setVariable(`b_text_${k}`, newText)
+	}
 }
 
 instance.prototype.devices_list = function (list) {
@@ -316,6 +385,7 @@ instance.prototype.init_actions = function (system) {
 		label: 'Current surface',
 		id: 'self',
 	})
+
 	for (var i = 0; i < self.devices.length; ++i) {
 		self.CHOICES_SURFACES.push({
 			label: self.devices[i].type + ' (' + self.devices[i].serialnumber + ')',
@@ -487,7 +557,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -509,7 +579,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -531,7 +601,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -559,7 +629,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -587,7 +657,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -615,7 +685,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -640,7 +710,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -925,7 +995,7 @@ instance.prototype.update_variables = function (system) {
 	})
 
 	variables.push({
-		label: 'IP of binded network interface',
+		label: 'IP of attached network interface',
 		name: 'bind_ip',
 	})
 
@@ -970,7 +1040,6 @@ instance.prototype.init_feedback = function () {
 	var self = this
 
 	var feedbacks = {}
-
 	var instance_choices = []
 
 	Object.entries(self.instances).forEach((entry) => {
@@ -1031,7 +1100,6 @@ instance.prototype.init_feedback = function () {
 			},
 		],
 	}
-
 	self.setFeedbackDefinitions(feedbacks)
 }
 
