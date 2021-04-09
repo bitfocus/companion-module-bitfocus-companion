@@ -4,8 +4,6 @@ var exec = require('child_process').exec
 var debug
 var log
 
-var interfaces = []
-
 function instance(system, id, config) {
 	var self = this
 
@@ -208,6 +206,15 @@ instance.prototype.upgrade_one2bank = function (config, actions, upActions) {
 
 instance.prototype.bind_ip_get = function () {
 	var self = this
+	var adapters = getNetworkInterfaces.apply(self)
+	var ip = ''
+
+	for (let i in adapters) {
+		self.setVariable(adapters[i].name, adapters[i].address)
+		ip += adapters[i].address + '\\n'
+	}
+
+	self.setVariable('all_ip', ip)
 
 	self.system.emit('config_get', 'bind_ip', function (bind_ip) {
 		self.setVariable('bind_ip', bind_ip)
@@ -931,33 +938,48 @@ instance.prototype.changeControllerPage = function (surface, page, from) {
 }
 
 function getNetworkInterfaces() {
+	var self = this
 	var interfaces = []
 	const networkInterfaces = os.networkInterfaces()
 
 	for (const interface in networkInterfaces) {
 		let numberOfAddresses = networkInterfaces[interface].length
+		let v4Addresses = [];
+
 		for (let i = 0; i < numberOfAddresses; i++) {
 			if (networkInterfaces[interface][i]['family'] === 'IPv4') {
-				interfaces.push({
-					label: interface,
-					name: interface,
-					address: networkInterfaces[interface][i]['address'],
-				})
+				v4Addresses.push( networkInterfaces[interface][i].address )
 			}
 		}
+		numV4s = v4Addresses.length
+		for (let i = 0; i < numV4s; i++) {
+			let aNum = (numV4s>1 ? `:${i}` : '')
+			interfaces.push({
+				label: `${interface}${aNum}`,
+				name: `${interface}${aNum}`,
+				address: v4Addresses[i],
+			})
+		}
 	}
+	self.adapters = interfaces
 
 	return interfaces
 }
 
 instance.prototype.update_variables = function (system) {
 	var self = this
-	var variables = getNetworkInterfaces()
-	var ip = ''
+	var variables = []
+	var adapters = self.adapters
 
-	for (let i = 0; i < variables.length; i++) {
-		self.setVariable(variables[i].name, variables[i].address)
-		ip += variables[i].address + '\\n'
+	if (adapters == undefined) {
+		adapters = getNetworkInterfaces.apply(self)
+	}
+
+	for (let i in adapters) {
+		variables.push({
+			label: `Network Adapter ${adapters[i].name} IP`,
+			name: adapters[i].name
+		})
 	}
 
 	variables.push({
@@ -1019,6 +1041,8 @@ instance.prototype.update_variables = function (system) {
 		name: 'jog',
 	})
 
+	self.setVariableDefinitions(variables)
+
 	self.setVariable('instance_errors', 0)
 	self.setVariable('instance_warns', 0)
 	self.setVariable('instance_oks', 0)
@@ -1027,13 +1051,10 @@ instance.prototype.update_variables = function (system) {
 	self.setVariable('time_h', '')
 	self.setVariable('time_m', '')
 	self.setVariable('time_s', '')
-	self.setVariable('bind_ip', '')
-	self.setVariable('all_ip', ip)
 	self.setVariable('t-bar', '0')
 	self.setVariable('jog', '0')
 	self.setVariable('shuttle', '0')
 
-	self.setVariableDefinitions(variables)
 }
 
 instance.prototype.init_feedback = function () {
@@ -1053,11 +1074,11 @@ instance.prototype.init_feedback = function () {
 
 	feedbacks['instance_status'] = {
 		label: 'Companion Instance Status',
-		description: 'If any companion instance encounters any errors, this will turn red',
+		description: 'Change button color on Instance Status\nDisabled color is not used when "All" instances is selected',
 		options: [
 			{
 				type: 'dropdown',
-				label: 'Instance',
+				label: 'Instance or All',
 				id: 'instance_id',
 				choices: instance_choices,
 				default: 'all',
@@ -1098,6 +1119,18 @@ instance.prototype.init_feedback = function () {
 				id: 'error_bg',
 				default: self.rgb(200, 0, 0),
 			},
+			{
+				type: 'colorpicker',
+				label: 'Disabled foreground color',
+				id: 'disabled_fg',
+				default: self.rgb(153, 153, 153),
+			},
+			{
+				type: 'colorpicker',
+				label: 'Disabled background color',
+				id: 'disabled_bg',
+				default: self.rgb(64, 64, 64),
+			},
 		],
 	}
 	self.setFeedbackDefinitions(feedbacks)
@@ -1107,6 +1140,28 @@ instance.prototype.feedback = function (feedback, bank) {
 	var self = this
 
 	if (feedback.type == 'instance_status') {
+		console.log('options: ', feedback.options)
+		if (feedback.options.instance_id == 'all') {
+			if (self.instance_errors > 0) {
+				return {
+					color: feedback.options.error_fg,
+					bgcolor: feedback.options.error_bg,
+				}
+			}
+
+			if (self.instance_warns > 0) {
+				return {
+					color: feedback.options.warning_fg,
+					bgcolor: feedback.options.warning_bg,
+				}
+			}
+
+			return {
+				color: feedback.options.ok_fg,
+				bgcolor: feedback.options.ok_bg,
+			}
+		}
+
 		if (self.instance_status.hasOwnProperty(feedback.options.instance_id)) {
 			var cur_instance = self.instance_status[feedback.options.instance_id]
 
@@ -1124,29 +1179,26 @@ instance.prototype.feedback = function (feedback, bank) {
 				}
 			}
 
-			return {
-				color: feedback.options.ok_fg,
-				bgcolor: feedback.options.ok_bg,
+			if (cur_instance[0] == 0) {
+				return {
+					color: feedback.options.ok_fg,
+					bgcolor: feedback.options.ok_bg,
+				}
+			}
+
+			if (cur_instance[0] == -1 || cur_instance[0] == null) {
+				return {
+					color: feedback.options.disabled_fg,
+					bgcolor: feedback.options.disabled_bg,
+				}
 			}
 		}
-
-		if (self.instance_errors > 0) {
+		// disabled has no 'status' entry
+		if (feedback.options.instance_id != 'bitfocus-companion') {
 			return {
-				color: feedback.options.error_fg,
-				bgcolor: feedback.options.error_bg,
+				color: feedback.options.disabled_fg,
+				bgcolor: feedback.options.disabled_bg,
 			}
-		}
-
-		if (self.instance_warns > 0) {
-			return {
-				color: feedback.options.warning_fg,
-				bgcolor: feedback.options.warning_bg,
-			}
-		}
-
-		return {
-			color: feedback.options.ok_fg,
-			bgcolor: feedback.options.ok_bg,
 		}
 	}
 }
