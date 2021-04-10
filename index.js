@@ -944,16 +944,16 @@ function getNetworkInterfaces() {
 
 	for (const interface in networkInterfaces) {
 		let numberOfAddresses = networkInterfaces[interface].length
-		let v4Addresses = [];
+		let v4Addresses = []
 
 		for (let i = 0; i < numberOfAddresses; i++) {
 			if (networkInterfaces[interface][i]['family'] === 'IPv4') {
-				v4Addresses.push( networkInterfaces[interface][i].address )
+				v4Addresses.push(networkInterfaces[interface][i].address)
 			}
 		}
 		numV4s = v4Addresses.length
 		for (let i = 0; i < numV4s; i++) {
-			let aNum = (numV4s>1 ? `:${i}` : '')
+			let aNum = numV4s > 1 ? `:${i}` : ''
 			interfaces.push({
 				label: `${interface}${aNum}`,
 				name: `${interface}${aNum}`,
@@ -978,7 +978,7 @@ instance.prototype.update_variables = function (system) {
 	for (let i in adapters) {
 		variables.push({
 			label: `Network Adapter ${adapters[i].name} IP`,
-			name: adapters[i].name
+			name: adapters[i].name,
 		})
 	}
 
@@ -1054,7 +1054,6 @@ instance.prototype.update_variables = function (system) {
 	self.setVariable('t-bar', '0')
 	self.setVariable('jog', '0')
 	self.setVariable('shuttle', '0')
-
 }
 
 instance.prototype.init_feedback = function () {
