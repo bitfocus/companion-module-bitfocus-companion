@@ -945,6 +945,7 @@ function getNetworkInterfaces() {
 	for (const interface in networkInterfaces) {
 		let numberOfAddresses = networkInterfaces[interface].length
 		let v4Addresses = []
+		let iface = interface.split(' ')[0]
 
 		for (let i = 0; i < numberOfAddresses; i++) {
 			if (networkInterfaces[interface][i]['family'] === 'IPv4') {
@@ -956,7 +957,7 @@ function getNetworkInterfaces() {
 			let aNum = numV4s > 1 ? `:${i}` : ''
 			interfaces.push({
 				label: `${interface}${aNum}`,
-				name: `${interface}${aNum}`,
+				name: `${iface}${aNum}`,
 				address: v4Addresses[i],
 			})
 		}
@@ -977,7 +978,7 @@ instance.prototype.update_variables = function (system) {
 
 	for (let i in adapters) {
 		variables.push({
-			label: `Network Adapter ${adapters[i].name} IP`,
+			label: `${adapters[i].label} IP Address`,
 			name: adapters[i].name,
 		})
 	}
