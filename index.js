@@ -1140,7 +1140,6 @@ instance.prototype.feedback = function (feedback, bank) {
 	var self = this
 
 	if (feedback.type == 'instance_status') {
-		console.log('options: ', feedback.options)
 		if (feedback.options.instance_id == 'all') {
 			if (self.instance_errors > 0) {
 				return {
