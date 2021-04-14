@@ -4,8 +4,6 @@ var exec = require('child_process').exec
 var debug
 var log
 
-var interfaces = []
-
 function instance(system, id, config) {
 	var self = this
 
@@ -121,6 +119,7 @@ instance.prototype.init = function () {
 	self.instances = {}
 	self.active = {}
 	self.pages = {}
+	self.bank_info = {}
 	self.pageHistory = {}
 
 	self.CHOICES_INSTANCES = []
@@ -150,17 +149,22 @@ instance.prototype.init = function () {
 	self.devices_getall()
 	self.addSystemCallback('devices_list', self.devices_list.bind(self))
 
+	self.bind_ip_get()
+	self.addSystemCallback('ip_rebind', self.bind_ip_get.bind(self))
+
+	self.banks_getall()
+	self.addSystemCallback('graphics_bank_invalidate', self.bank_invalidate.bind(self))
+
 	self.instance_save()
 	self.addSystemCallback('instance_save', self.instance_save.bind(self))
 
-	self.status(self.STATE_OK)
-
-	self.init_feedback()
+	// A missing 'self' caused instance_save() to error
+	// before completion. This call is no longer necessary.
+	//self.init_feedback();
 	self.checkFeedbacks()
 	self.update_variables()
 
-	self.bind_ip_get()
-	self.addSystemCallback('ip_rebind', self.bind_ip_get.bind(self))
+	self.status(self.STATE_OK)
 }
 
 instance.prototype.upgrade15to32 = function (config, actions) {
@@ -202,6 +206,15 @@ instance.prototype.upgrade_one2bank = function (config, actions, upActions) {
 
 instance.prototype.bind_ip_get = function () {
 	var self = this
+	var adapters = getNetworkInterfaces.apply(self)
+	var ip = ''
+
+	for (let i in adapters) {
+		self.setVariable(adapters[i].name, adapters[i].address)
+		ip += adapters[i].address + '\\n'
+	}
+
+	self.setVariable('all_ip', ip)
 
 	self.system.emit('config_get', 'bind_ip', function (bind_ip) {
 		self.setVariable('bind_ip', bind_ip)
@@ -221,6 +234,69 @@ instance.prototype.pages_update = function () {
 
 	// Update dropdowns
 	self.init_actions()
+}
+
+instance.prototype.banks_getall = function () {
+	var self = this
+
+	system.emit('db_get', 'bank', function (banks) {
+		self.banks = banks
+		for (var p in banks) {
+			for (var b in banks[p]) {
+				var tb = banks[p][b]
+				var k = `${p}_${b}`
+				var v = `b_text_${k}`
+				var newText
+				if (tb.style === 'png') {
+					// need a copy, not a reference
+					self.bank_info[k] = JSON.parse(JSON.stringify(tb))
+					newText = self.bank_info[k].text = self.check_var_recursion(v, tb.text)
+					self.setVariable(v, newText)
+				}
+			}
+		}
+	})
+}
+
+instance.prototype.check_var_recursion = function (v, realText) {
+	var self = this
+	var newText
+
+	if (realText) {
+		if (realText.includes(v)) {
+			// recursion error:
+			// button trying to include itself
+			newText = '$RE'
+		} else {
+			system.emit('variable_parse', realText, function (str) {
+				newText = str
+			})
+		}
+	}
+	return newText
+}
+
+instance.prototype.bank_invalidate = function (page, bank) {
+	var self = this
+	var k = `${page}_${bank}`
+	var v = `b_text_${k}`
+	var oldText
+	var newText
+	var realText = self.banks[page][bank].text
+
+	if (!self.bank_info[k]) {
+		// new key
+		self.bank_info[k] = JSON.parse(JSON.stringify(self.banks[page][bank]))
+	} else if (self.bank_info[k].text) {
+		oldText = self.bank_info[k].text
+	}
+
+	newText = self.check_var_recursion(v, realText)
+
+	if (oldText !== newText) {
+		self.bank_info[k].text = newText
+		self.setVariable(`b_text_${k}`, newText)
+	}
 }
 
 instance.prototype.devices_list = function (list) {
@@ -316,6 +392,7 @@ instance.prototype.init_actions = function (system) {
 		label: 'Current surface',
 		id: 'self',
 	})
+
 	for (var i = 0; i < self.devices.length; ++i) {
 		self.CHOICES_SURFACES.push({
 			label: self.devices[i].type + ' (' + self.devices[i].serialnumber + ')',
@@ -487,7 +564,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -509,7 +586,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -531,7 +608,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -559,7 +636,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -587,7 +664,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -615,7 +692,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -640,7 +717,7 @@ instance.prototype.init_actions = function (system) {
 				{
 					type: 'dropdown',
 					label: 'Bank',
-					tooltip: 'Choosing This Button will ignore choice of Page',
+					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
@@ -861,33 +938,49 @@ instance.prototype.changeControllerPage = function (surface, page, from) {
 }
 
 function getNetworkInterfaces() {
+	var self = this
 	var interfaces = []
 	const networkInterfaces = os.networkInterfaces()
 
 	for (const interface in networkInterfaces) {
 		let numberOfAddresses = networkInterfaces[interface].length
+		let v4Addresses = []
+		let iface = interface.split(' ')[0]
+
 		for (let i = 0; i < numberOfAddresses; i++) {
 			if (networkInterfaces[interface][i]['family'] === 'IPv4') {
-				interfaces.push({
-					label: interface,
-					name: interface,
-					address: networkInterfaces[interface][i]['address'],
-				})
+				v4Addresses.push(networkInterfaces[interface][i].address)
 			}
 		}
+		numV4s = v4Addresses.length
+		for (let i = 0; i < numV4s; i++) {
+			let aNum = numV4s > 1 ? `:${i}` : ''
+			interfaces.push({
+				label: `${interface}${aNum}`,
+				name: `${iface}${aNum}`,
+				address: v4Addresses[i],
+			})
+		}
 	}
+	self.adapters = interfaces
 
 	return interfaces
 }
 
 instance.prototype.update_variables = function (system) {
 	var self = this
-	var variables = getNetworkInterfaces()
-	var ip = ''
+	var variables = []
+	var adapters = self.adapters
 
-	for (let i = 0; i < variables.length; i++) {
-		self.setVariable(variables[i].name, variables[i].address)
-		ip += variables[i].address + '\\n'
+	if (adapters == undefined) {
+		adapters = getNetworkInterfaces.apply(self)
+	}
+
+	for (let i in adapters) {
+		variables.push({
+			label: `${adapters[i].label} IP Address`,
+			name: adapters[i].name,
+		})
 	}
 
 	variables.push({
@@ -925,7 +1018,7 @@ instance.prototype.update_variables = function (system) {
 	})
 
 	variables.push({
-		label: 'IP of binded network interface',
+		label: 'IP of attached network interface',
 		name: 'bind_ip',
 	})
 
@@ -949,6 +1042,8 @@ instance.prototype.update_variables = function (system) {
 		name: 'jog',
 	})
 
+	self.setVariableDefinitions(variables)
+
 	self.setVariable('instance_errors', 0)
 	self.setVariable('instance_warns', 0)
 	self.setVariable('instance_oks', 0)
@@ -957,20 +1052,15 @@ instance.prototype.update_variables = function (system) {
 	self.setVariable('time_h', '')
 	self.setVariable('time_m', '')
 	self.setVariable('time_s', '')
-	self.setVariable('bind_ip', '')
-	self.setVariable('all_ip', ip)
 	self.setVariable('t-bar', '0')
 	self.setVariable('jog', '0')
 	self.setVariable('shuttle', '0')
-
-	self.setVariableDefinitions(variables)
 }
 
 instance.prototype.init_feedback = function () {
 	var self = this
 
 	var feedbacks = {}
-
 	var instance_choices = []
 
 	Object.entries(self.instances).forEach((entry) => {
@@ -984,11 +1074,11 @@ instance.prototype.init_feedback = function () {
 
 	feedbacks['instance_status'] = {
 		label: 'Companion Instance Status',
-		description: 'If any companion instance encounters any errors, this will turn red',
+		description: 'Change button color on Instance Status\nDisabled color is not used when "All" instances is selected',
 		options: [
 			{
 				type: 'dropdown',
-				label: 'Instance',
+				label: 'Instance or All',
 				id: 'instance_id',
 				choices: instance_choices,
 				default: 'all',
@@ -1029,9 +1119,20 @@ instance.prototype.init_feedback = function () {
 				id: 'error_bg',
 				default: self.rgb(200, 0, 0),
 			},
+			{
+				type: 'colorpicker',
+				label: 'Disabled foreground color',
+				id: 'disabled_fg',
+				default: self.rgb(153, 153, 153),
+			},
+			{
+				type: 'colorpicker',
+				label: 'Disabled background color',
+				id: 'disabled_bg',
+				default: self.rgb(64, 64, 64),
+			},
 		],
 	}
-
 	self.setFeedbackDefinitions(feedbacks)
 }
 
@@ -1039,6 +1140,27 @@ instance.prototype.feedback = function (feedback, bank) {
 	var self = this
 
 	if (feedback.type == 'instance_status') {
+		if (feedback.options.instance_id == 'all') {
+			if (self.instance_errors > 0) {
+				return {
+					color: feedback.options.error_fg,
+					bgcolor: feedback.options.error_bg,
+				}
+			}
+
+			if (self.instance_warns > 0) {
+				return {
+					color: feedback.options.warning_fg,
+					bgcolor: feedback.options.warning_bg,
+				}
+			}
+
+			return {
+				color: feedback.options.ok_fg,
+				bgcolor: feedback.options.ok_bg,
+			}
+		}
+
 		if (self.instance_status.hasOwnProperty(feedback.options.instance_id)) {
 			var cur_instance = self.instance_status[feedback.options.instance_id]
 
@@ -1056,29 +1178,26 @@ instance.prototype.feedback = function (feedback, bank) {
 				}
 			}
 
-			return {
-				color: feedback.options.ok_fg,
-				bgcolor: feedback.options.ok_bg,
+			if (cur_instance[0] == 0) {
+				return {
+					color: feedback.options.ok_fg,
+					bgcolor: feedback.options.ok_bg,
+				}
+			}
+
+			if (cur_instance[0] == -1 || cur_instance[0] == null) {
+				return {
+					color: feedback.options.disabled_fg,
+					bgcolor: feedback.options.disabled_bg,
+				}
 			}
 		}
-
-		if (self.instance_errors > 0) {
+		// disabled has no 'status' entry
+		if (feedback.options.instance_id != 'bitfocus-companion') {
 			return {
-				color: feedback.options.error_fg,
-				bgcolor: feedback.options.error_bg,
+				color: feedback.options.disabled_fg,
+				bgcolor: feedback.options.disabled_bg,
 			}
-		}
-
-		if (self.instance_warns > 0) {
-			return {
-				color: feedback.options.warning_fg,
-				bgcolor: feedback.options.warning_bg,
-			}
-		}
-
-		return {
-			color: feedback.options.ok_fg,
-			bgcolor: feedback.options.ok_bg,
 		}
 	}
 }
