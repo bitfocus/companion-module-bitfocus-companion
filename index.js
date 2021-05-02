@@ -287,7 +287,8 @@ instance.prototype.bank_invalidate = function (page, bank) {
 	if (!self.bank_info[k]) {
 		// new key
 		self.bank_info[k] = JSON.parse(JSON.stringify(self.banks[page][bank]))
-	} else if (self.bank_info[k].text) {
+	}
+	if (self.bank_info[k].text) {
 		oldText = self.bank_info[k].text
 	}
 
@@ -296,6 +297,24 @@ instance.prototype.bank_invalidate = function (page, bank) {
 	if (oldText !== newText) {
 		self.bank_info[k].text = newText
 		self.setVariable(`b_text_${k}`, newText)
+	} else { // feedback/color change
+		// Fetch feedback-overrides for bank
+		var o = self.bank_info[k]
+		var n = JSON.parse(JSON.stringify(self.banks[page][bank]))
+		var changed = false
+		system.emit('feedback_get_style', page, bank, function (style) {
+			// feedback override?
+			if (style !== undefined) {
+				n =  style
+			}
+			for (var key of ['color','bgcolor']) {
+				changed = changed || o[key] != n[key]
+				o[key] = n[key]
+			}
+		})
+		if (changed) {
+			self.checkFeedbacks('bank_style')
+		}
 	}
 }
 
@@ -1133,12 +1152,43 @@ instance.prototype.init_feedback = function () {
 			},
 		],
 	}
+	feedbacks['bank_style'] = {
+		label: 'Use another buttons color',
+		description: 'Imitate the colors of another button',
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Page',
+				tooltip: 'What page is the button on?',
+				id: 'page',
+				default: '0',
+				choices: self.CHOICES_PAGES,
+			},
+			{
+				type: 'dropdown',
+				label: 'Bank',
+				tooltip: 'Which Button?',
+				id: 'bank',
+				default: '0',
+				choices: self.CHOICES_BANKS,
+			},
+		],
+	}
 	self.setFeedbackDefinitions(feedbacks)
 }
 
 instance.prototype.feedback = function (feedback, bank) {
 	var self = this
 
+	if (feedback.type == 'bank_style') {
+		var b = self.bank_info[`${feedback.options.page}_${feedback.options.bank}`]
+		if (b !== undefined) {
+			return {
+				color: b.color,
+				bgcolor: b.bgcolor,
+			}
+		}
+	}
 	if (feedback.type == 'instance_status') {
 		if (feedback.options.instance_id == 'all') {
 			if (self.instance_errors > 0) {
