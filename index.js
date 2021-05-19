@@ -155,6 +155,8 @@ instance.prototype.init = function () {
 	self.banks_getall()
 	self.addSystemCallback('graphics_bank_invalidate', self.bank_invalidate.bind(self))
 
+	self.addSystemCallback('graphics_indicate_push', self.bank_indicate_push.bind(self))
+
 	self.instance_save()
 	self.addSystemCallback('instance_save', self.instance_save.bind(self))
 
@@ -297,7 +299,8 @@ instance.prototype.bank_invalidate = function (page, bank) {
 	if (oldText !== newText) {
 		self.bank_info[k].text = newText
 		self.setVariable(`b_text_${k}`, newText)
-	} else { // feedback/color change
+	} else {
+		// feedback/color change
 		// Fetch feedback-overrides for bank
 		var o = self.bank_info[k]
 		var n = JSON.parse(JSON.stringify(self.banks[page][bank]))
@@ -305,9 +308,9 @@ instance.prototype.bank_invalidate = function (page, bank) {
 		system.emit('feedback_get_style', page, bank, function (style) {
 			// feedback override?
 			if (style !== undefined) {
-				n =  style
+				n = style
 			}
-			for (var key of ['color','bgcolor']) {
+			for (var key of ['color', 'bgcolor']) {
 				changed = changed || o[key] != n[key]
 				o[key] = n[key]
 			}
@@ -316,6 +319,12 @@ instance.prototype.bank_invalidate = function (page, bank) {
 			self.checkFeedbacks('bank_style')
 		}
 	}
+}
+
+instance.prototype.bank_indicate_push = function (page, bank, state) {
+	var self = this
+
+	self.checkFeedbacks('bank_pushed')
 }
 
 instance.prototype.devices_list = function (list) {
@@ -1174,10 +1183,37 @@ instance.prototype.init_feedback = function () {
 			},
 		],
 	}
+	feedbacks['bank_pushed'] = {
+		type: 'boolean',
+		label: 'When button is pushed',
+		description: 'Imitate the colors of another button',
+		style: {
+			color: self.rgb(255, 255, 255),
+			bgcolor: self.rgb(255, 0, 0),
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Page',
+				tooltip: 'What page is the button on?',
+				id: 'page',
+				default: '0',
+				choices: self.CHOICES_PAGES,
+			},
+			{
+				type: 'dropdown',
+				label: 'Bank',
+				tooltip: 'Which Button?',
+				id: 'bank',
+				default: '0',
+				choices: self.CHOICES_BANKS,
+			},
+		],
+	}
 	self.setFeedbackDefinitions(feedbacks)
 }
 
-instance.prototype.feedback = function (feedback, bank) {
+instance.prototype.feedback = function (feedback, bank, info) {
 	var self = this
 
 	if (feedback.type == 'bank_style') {
@@ -1188,8 +1224,23 @@ instance.prototype.feedback = function (feedback, bank) {
 				bgcolor: b.bgcolor,
 			}
 		}
-	}
-	if (feedback.type == 'instance_status') {
+	} else if (feedback.type == 'bank_pushed') {
+		let thePage = feedback.options.page
+		let theBank = feedback.options.bank
+
+		if (thePage == '0') thePage = info.page
+		if (theBank == '0') theBank = info.bank
+
+		console.log(thePage, theBank, feedback.options)
+
+		let isPushed = false
+		self.system.emit('graphics_is_pushed', thePage, theBank, function (pushed) {
+			isPushed = pushed
+		})
+		console.log('bank_pushed', info, isPushed)
+
+		return isPushed
+	} else if (feedback.type == 'instance_status') {
 		if (feedback.options.instance_id == 'all') {
 			if (self.instance_errors > 0) {
 				return {
