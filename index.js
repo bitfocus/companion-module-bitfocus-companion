@@ -1231,13 +1231,10 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		if (thePage == '0') thePage = info.page
 		if (theBank == '0') theBank = info.bank
 
-		console.log(thePage, theBank, feedback.options)
-
 		let isPushed = false
 		self.system.emit('graphics_is_pushed', thePage, theBank, function (pushed) {
 			isPushed = pushed
 		})
-		console.log('bank_pushed', info, isPushed)
 
 		return isPushed
 	} else if (feedback.type == 'instance_status') {
