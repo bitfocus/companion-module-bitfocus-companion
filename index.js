@@ -126,6 +126,7 @@ instance.prototype.init = function () {
 	self.CHOICES_SURFACES = []
 	self.CHOICES_PAGES = []
 	self.CHOICES_BANKS = [{ label: 'This button', id: 0 }]
+	self.CHOICES_VARIABLES = []
 
 	for (var bank = 1; bank <= global.MAX_BUTTONS; bank++) {
 		self.CHOICES_BANKS.push({ label: bank, id: bank })
@@ -159,6 +160,10 @@ instance.prototype.init = function () {
 
 	self.instance_save()
 	self.addSystemCallback('instance_save', self.instance_save.bind(self))
+
+	self.addSystemCallback('variable_instance_definitions_set', self.variable_list_update.bind(self))
+	self.addSystemCallback('variable_changed', self.variable_changed.bind(self))
+	self.variable_list_update()
 
 	// A missing 'self' caused instance_save() to error
 	// before completion. This call is no longer necessary.
@@ -340,6 +345,29 @@ instance.prototype.devices_getall = function () {
 	self.system.emit('devices_list_get', function (list) {
 		self.devices = list
 	})
+}
+
+instance.prototype.variable_list_update = function () {
+	var self = this
+
+	self.system.emit('variable_get_definitions', function (list) {
+		self.CHOICES_VARIABLES = []
+		for (const [id, variables] of Object.entries(list)) {
+			for (const variable of variables) {
+				const v = `${id}:${variable.name}`
+				self.CHOICES_VARIABLES.push({ label: `${v} - ${variable.label}`, id: v })
+			}
+		}
+	})
+
+	self.init_feedback()
+}
+instance.prototype.variable_changed = function () {
+	var self = this
+
+	// TODO - this should be update to use self.checkFeedbacksById(...) once that is available
+
+	self.checkFeedbacks('variable_value')
 }
 
 instance.prototype.instance_save = function () {
@@ -1185,8 +1213,8 @@ instance.prototype.init_feedback = function () {
 	}
 	feedbacks['bank_pushed'] = {
 		type: 'boolean',
-		label: 'When button is pushed',
-		description: 'Imitate the colors of another button',
+		label: 'When button is pushed/latched',
+		description: 'Change style when a button is being pressed or is latched',
 		style: {
 			color: self.rgb(255, 255, 255),
 			bgcolor: self.rgb(255, 0, 0),
@@ -1207,6 +1235,43 @@ instance.prototype.init_feedback = function () {
 				id: 'bank',
 				default: '0',
 				choices: self.CHOICES_BANKS,
+			},
+		],
+	}
+	feedbacks['variable_value'] = {
+		type: 'boolean',
+		label: 'Check variable value',
+		description: 'Change style based on the value of a variable',
+		style: {
+			color: self.rgb(255, 255, 255),
+			bgcolor: self.rgb(255, 0, 0),
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Variable',
+				tooltip: 'What variable to act on?',
+				id: 'variable',
+				default: 'internal:time_hms',
+				choices: self.CHOICES_VARIABLES,
+			},
+			{
+				type: 'dropdown',
+				label: 'Operation',
+				id: 'op',
+				default: 'eq',
+				choices: [
+					{ id: 'eq', label: '=' },
+					{ id: 'ne', label: '!=' },
+					{ id: 'gt', label: '>' },
+					{ id: 'lt', label: '<' },
+				],
+			},
+			{
+				type: 'textinput',
+				label: 'Value',
+				id: 'value',
+				default: '',
 			},
 		],
 	}
@@ -1237,6 +1302,21 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		})
 
 		return isPushed
+	} else if (feedback.type == 'variable_value') {
+		let value = ''
+		const id = feedback.options.variable.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
+
+		switch (feedback.options.op) {
+			case 'gt':
+				return value > parseFloat(feedback.options.value)
+			case 'lt':
+				return value < parseFloat(feedback.options.value)
+			case 'ne':
+				return feedback.options.value + '' != value
+			default:
+				return feedback.options.value + '' == value
+		}
 	} else if (feedback.type == 'instance_status') {
 		if (feedback.options.instance_id == 'all') {
 			if (self.instance_errors > 0) {
