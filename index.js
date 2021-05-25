@@ -822,7 +822,6 @@ instance.prototype.init_actions = function (system) {
 instance.prototype.action = function (action, extras) {
 	var self = this
 	var id = action.action
-	var cmd
 	var opt = action.options
 	var thePage = opt.page
 	var theBank = opt.bank
@@ -1318,8 +1317,8 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		let thePage = feedback.options.page
 		let theBank = feedback.options.bank
 
-		if (thePage == '0') thePage = info.page
-		if (theBank == '0') theBank = info.bank
+		if (info && thePage == '0') thePage = info.page
+		if (info && theBank == '0') theBank = info.bank
 
 		let isPushed = false
 		self.system.emit('graphics_is_pushed', thePage, theBank, function (pushed) {
