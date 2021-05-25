@@ -122,6 +122,8 @@ instance.prototype.init = function () {
 	self.bank_info = {}
 	self.pageHistory = {}
 
+	self.feedback_variable_subscriptions = {}
+
 	self.CHOICES_INSTANCES = []
 	self.CHOICES_SURFACES = []
 	self.CHOICES_PAGES = []
@@ -165,11 +167,11 @@ instance.prototype.init = function () {
 	self.addSystemCallback('variable_changed', self.variable_changed.bind(self))
 	self.variable_list_update()
 
-	// A missing 'self' caused instance_save() to error
-	// before completion. This call is no longer necessary.
-	//self.init_feedback();
+	// self.init_feedback() // called by variable_list_update
 	self.checkFeedbacks()
 	self.update_variables()
+
+	self.subscribeFeedbacks('variable_value')
 
 	self.status(self.STATE_OK)
 }
@@ -362,12 +364,27 @@ instance.prototype.variable_list_update = function () {
 
 	self.init_feedback()
 }
-instance.prototype.variable_changed = function () {
+instance.prototype.variable_changed = function (label, variable) {
 	var self = this
 
-	// TODO - this should be update to use self.checkFeedbacksById(...) once that is available
+	const variableName = `${label}:${variable}`
 
-	self.checkFeedbacks('variable_value')
+	if (self.checkFeedbacksById) {
+		let affected_ids = []
+
+		for (const [id, name] of Object.entries(self.feedback_variable_subscriptions)) {
+			if (name === variableName) {
+				affected_ids.push(id)
+			}
+		}
+
+		if (affected_ids.length > 0) {
+			self.checkFeedbacksById(...affected_ids)
+		}
+	} else {
+		// Temporary flow for backwards compatability of companion core
+		self.checkFeedbacks('variable_value')
+	}
 }
 
 instance.prototype.instance_save = function () {
@@ -1274,6 +1291,14 @@ instance.prototype.init_feedback = function () {
 				default: '',
 			},
 		],
+		subscribe: (fb) => {
+			if (fb.options.variable) {
+				self.feedback_variable_subscriptions[fb.id] = fb.options.variable
+			}
+		},
+		unsubscribe: (fb) => {
+			delete self.feedback_variable_subscriptions[fb.id]
+		},
 	}
 	self.setFeedbackDefinitions(feedbacks)
 }
