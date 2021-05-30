@@ -811,9 +811,13 @@ instance.prototype.init_actions = function (system) {
 		app_exit: {
 			label: 'Kill companion',
 		},
-		app_restart: {
+	}
+
+	if (self.system.listenerCount('restart') > 0) {
+		// Only offer app_restart if there is a handler for the event
+		actions['app_restart'] = {
 			label: 'Restart companion',
-		},
+		}
 	}
 
 	self.system.emit('instance_actions', self.id, actions)
