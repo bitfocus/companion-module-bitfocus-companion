@@ -24,9 +24,11 @@ function instance(system, id, config) {
 		self.instance_warns = errcount[1]
 		self.instance_oks = errcount[0]
 
-		self.setVariable('instance_errors', self.instance_errors)
-		self.setVariable('instance_warns', self.instance_warns)
-		self.setVariable('instance_oks', self.instance_oks)
+		self.setVariables({
+			instance_errors: self.instance_errors,
+			instance_warns: self.instance_warns,
+			instance_oks: self.instance_oks,
+		})
 
 		self.checkFeedbacks('instance_status')
 	})
@@ -40,14 +42,16 @@ function instance(system, id, config) {
 		const day = `0${now.getDate()}`.slice(-2)
 		const hhmm = hh + ':' + mm
 		const hhmmss = hhmm + ':' + ss
-		self.setVariable('date_y', now.getFullYear())
-		self.setVariable('date_m', month)
-		self.setVariable('date_d', day)
-		self.setVariable('time_hms', hhmmss)
-		self.setVariable('time_hm', hhmm)
-		self.setVariable('time_h', hh)
-		self.setVariable('time_m', mm)
-		self.setVariable('time_s', ss)
+		self.setVariables({
+			date_y: now.getFullYear(),
+			date_m: month,
+			date_d: day,
+			time_hms: hhmmss,
+			time_hm: hhmm,
+			time_h: hh,
+			time_m: mm,
+			time_s: ss,
+		})
 	}, 1000)
 
 	// super-constructor
@@ -113,7 +117,7 @@ instance.prototype.init = function () {
 	self.addSystemCallback('instance_save', self.instance_save.bind(self))
 
 	self.addSystemCallback('variable_instance_definitions_set', self.variable_list_update.bind(self))
-	self.addSystemCallback('variable_changed', self.variable_changed.bind(self))
+	self.addSystemCallback('variables_changed', self.variables_changed.bind(self))
 	self.variable_list_update()
 
 	// self.init_feedback() // called by variable_list_update
@@ -130,12 +134,15 @@ instance.prototype.bind_ip_get = function () {
 	var adapters = getNetworkInterfaces.apply(self)
 	var ip = ''
 
+	const new_values = {}
+
 	for (let i in adapters) {
-		self.setVariable(adapters[i].name, adapters[i].address)
+		new_values[adapters[i].name] = adapters[i].address
 		ip += adapters[i].address + '\\n'
 	}
 
-	self.setVariable('all_ip', ip)
+	new_values['all_ip'] = ip
+	self.setVariables(new_values)
 
 	self.system.emit('config_get', 'bind_ip', function (bind_ip) {
 		self.setVariable('bind_ip', bind_ip)
@@ -162,20 +169,25 @@ instance.prototype.banks_getall = function () {
 
 	system.emit('db_get', 'bank', function (banks) {
 		self.banks = banks
+
+		const new_values = {}
+
 		for (var p in banks) {
 			for (var b in banks[p]) {
 				var tb = banks[p][b]
 				var k = `${p}_${b}`
 				var v = `b_text_${k}`
-				var newText
 				if (tb.style === 'png') {
 					// need a copy, not a reference
 					self.bank_info[k] = JSON.parse(JSON.stringify(tb))
-					newText = self.bank_info[k].text = self.check_var_recursion(v, tb.text)
-					self.setVariable(v, newText)
+					new_values[v] = self.bank_info[k].text = self.check_var_recursion(v, tb.text)
+				} else {
+					new_values[v] = undefined
 				}
 			}
 		}
+
+		self.setVariables(new_values)
 	})
 }
 
@@ -276,26 +288,21 @@ instance.prototype.variable_list_update = function () {
 
 	self.init_feedback()
 }
-instance.prototype.variable_changed = function (label, variable) {
+instance.prototype.variables_changed = function (changed_variables, removed_variables) {
 	var self = this
 
-	const variableName = `${label}:${variable}`
+	const all_changed_variables = new Set([...removed_variables, ...Object.keys(changed_variables)])
 
-	if (self.checkFeedbacksById) {
-		let affected_ids = []
+	let affected_ids = []
 
-		for (const [id, name] of Object.entries(self.feedback_variable_subscriptions)) {
-			if (name === variableName) {
-				affected_ids.push(id)
-			}
+	for (const [id, name] of Object.entries(self.feedback_variable_subscriptions)) {
+		if (all_changed_variables.has(name)) {
+			affected_ids.push(id)
 		}
+	}
 
-		if (affected_ids.length > 0) {
-			self.checkFeedbacksById(...affected_ids)
-		}
-	} else {
-		// Temporary flow for backwards compatability of companion core
-		self.checkFeedbacks('variable_value')
+	if (affected_ids.length > 0) {
+		self.checkFeedbacksById(...affected_ids)
 	}
 }
 
@@ -1032,17 +1039,19 @@ instance.prototype.update_variables = function (system) {
 
 	self.setVariableDefinitions(variables)
 
-	self.setVariable('instance_errors', 0)
-	self.setVariable('instance_warns', 0)
-	self.setVariable('instance_oks', 0)
-	self.setVariable('time_hms', '')
-	self.setVariable('time_hm', '')
-	self.setVariable('time_h', '')
-	self.setVariable('time_m', '')
-	self.setVariable('time_s', '')
-	self.setVariable('t-bar', '0')
-	self.setVariable('jog', '0')
-	self.setVariable('shuttle', '0')
+	self.setVariables({
+		instance_errors: 0,
+		instance_warns: 0,
+		instance_oks: 0,
+		time_hms: '',
+		time_hm: '',
+		time_h: '',
+		time_m: '',
+		time_s: '',
+		't-bar': '0',
+		jog: '0',
+		shuttle: '0',
+	})
 }
 
 instance.prototype.init_feedback = function () {
