@@ -94,6 +94,8 @@ instance.prototype.init = function () {
 		'textcolor',
 		'bgcolor',
 		'panic_bank',
+		'bank_current_step',
+		'bank_current_step_delta',
 	]
 
 	self.PAGE_ACTIONS = ['set_page', 'set_page_byindex', 'inc_page', 'dec_page']
@@ -859,6 +861,64 @@ instance.prototype.init_actions = function (system) {
 				},
 			],
 		},
+
+		bank_current_step: {
+			label: 'Set bank step',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '0',
+					choices: self.CHOICES_PAGES,
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Which Button?',
+					id: 'bank',
+					default: '0',
+					choices: self.CHOICES_BANKS,
+				},
+				{
+					type: 'number',
+					label: 'Step',
+					tooltip: 'Which Step?',
+					id: 'step',
+					default: 1,
+					min: 1,
+				},
+			],
+		},
+		bank_current_step_delta: {
+			label: 'Skip bank step',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: 0,
+					choices: self.CHOICES_PAGES,
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Which Button?',
+					id: 'bank',
+					default: 0,
+					choices: self.CHOICES_BANKS,
+				},
+				{
+					type: 'number',
+					label: 'Amount',
+					tooltip: 'Negative to go backwards',
+					id: 'amount',
+					default: 1,
+				},
+			],
+		},
 	}
 
 	if (self.system.listenerCount('restart') > 0) {
@@ -1045,6 +1105,10 @@ instance.prototype.action = function (action, extras) {
 		self.system.emit('exit')
 	} else if (id == 'app_restart') {
 		self.system.emit('restart')
+	} else if (id == 'bank_current_step') {
+		self.system.emit('bank_action_sets_step_set', thePage, theBank, opt.step)
+	} else if (id == 'bank_current_step_delta') {
+		self.system.emit('bank_action_sets_step_delta', thePage, theBank, opt.amount)
 	}
 }
 
