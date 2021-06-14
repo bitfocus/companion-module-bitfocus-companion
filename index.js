@@ -780,7 +780,7 @@ instance.prototype.init_actions = function (system) {
 				},
 				{
 					type: 'checkbox',
-					label: 'Unlatch?',
+					label: 'Skip release actions?',
 					id: 'unlatch',
 					default: false,
 				},
@@ -1332,8 +1332,8 @@ instance.prototype.init_feedback = function () {
 	}
 	feedbacks['bank_pushed'] = {
 		type: 'boolean',
-		label: 'When button is pushed/latched',
-		description: 'Change style when a button is being pressed or is latched',
+		label: 'When button is pushed',
+		description: 'Change style when a button is being pressed',
 		style: {
 			color: self.rgb(255, 255, 255),
 			bgcolor: self.rgb(255, 0, 0),
