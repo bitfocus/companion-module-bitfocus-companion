@@ -70,6 +70,7 @@ instance.prototype.init = function () {
 	self.active = {}
 	self.pages = {}
 	self.bank_info = {}
+	self.bank_step = {}
 	self.pageHistory = {}
 	self.custom_variables = {}
 
@@ -120,6 +121,9 @@ instance.prototype.init = function () {
 
 	self.addSystemCallback('custom_variables_update', self.custom_variable_list_update.bind(self))
 	self.custom_variable_list_update()
+
+	self.addSystemCallback('bank_action_sets_step', self.bank_step_update.bind(self))
+	self.step_list_update()
 
 	// self.init_feedback() // called by variable_list_update
 	self.checkFeedbacks()
@@ -289,6 +293,23 @@ instance.prototype.devices_getall = function () {
 	self.system.emit('devices_list_get', function (list) {
 		self.devices = list
 	})
+}
+
+instance.prototype.step_list_update = function () {
+	var self = this
+
+	self.system.emit('bank_action_sets_step_getall', function (list) {
+		self.bank_step = list
+	})
+
+	self.checkFeedbacks('bank_current_step')
+}
+instance.prototype.bank_step_update = function (page, bank, step) {
+	var self = this
+
+	self.bank_step[page][bank] = step
+
+	self.checkFeedbacks('bank_current_step')
 }
 
 instance.prototype.variable_list_update = function () {
@@ -1004,8 +1025,8 @@ instance.prototype.action = function (action, extras) {
 		if (opt.path !== undefined) {
 			let path = opt.path
 			self.parseVariables(path, function (value) {
-				path = value;
-			});
+				path = value
+			})
 			debug("Running path: '" + path + "'")
 			exec(
 				path,
@@ -1428,6 +1449,41 @@ instance.prototype.init_feedback = function () {
 			delete self.feedback_variable_subscriptions[fb.id]
 		},
 	}
+	feedbacks['bank_current_step'] = {
+		type: 'boolean',
+		label: 'Check bank step',
+		description: 'Change style based on the current step of a bank',
+		style: {
+			color: self.rgb(0, 0, 0),
+			bgcolor: self.rgb(0, 255, 0),
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Page',
+				tooltip: 'What page is the button on?',
+				id: 'page',
+				default: '0',
+				choices: self.CHOICES_PAGES,
+			},
+			{
+				type: 'dropdown',
+				label: 'Bank',
+				tooltip: 'Which Button?',
+				id: 'bank',
+				default: '0',
+				choices: self.CHOICES_BANKS,
+			},
+			{
+				type: 'number',
+				label: 'Step',
+				tooltip: 'Which Step?',
+				id: 'step',
+				default: 1,
+				min: 1,
+			},
+		],
+	}
 
 	self.setFeedbackDefinitions(feedbacks)
 }
@@ -1469,6 +1525,20 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		})
 
 		return isPushed
+	} else if (feedback.type == 'bank_current_step') {
+		let thePage = feedback.options.page
+		let theBank = feedback.options.bank
+		let theStep = feedback.options.step
+
+		if (info && thePage == '0') thePage = info.page
+		if (info && theBank == '0') theBank = info.bank
+
+		const pageSteps = self.bank_step[thePage]
+		if (pageSteps) {
+			return pageSteps[theBank] + 1 === theStep
+		}
+
+		return false
 	} else if (feedback.type == 'variable_value') {
 		let value = ''
 		const id = feedback.options.variable.split(':')
