@@ -203,7 +203,7 @@ instance.prototype.custom_variable_list_update = function (data) {
 		})
 	}
 
-	console.log(data, self.custom_variables)
+	self.update_variables()
 
 	self.init_actions()
 }
@@ -1002,7 +1002,7 @@ function getNetworkInterfaces() {
 	return interfaces
 }
 
-instance.prototype.update_variables = function (system) {
+instance.prototype.update_variables = function () {
 	var self = this
 	var variables = []
 	var adapters = self.adapters
@@ -1076,6 +1076,13 @@ instance.prototype.update_variables = function (system) {
 		label: 'Jog position',
 		name: 'jog',
 	})
+
+	for (const [name, info] of Object.entries(self.custom_variables)) {
+		variables.push({
+			label: info.description,
+			name: `custom_${name}`,
+		})
+	}
 
 	self.setVariableDefinitions(variables)
 
