@@ -8,10 +8,7 @@ var log
 function instance(system, id, config) {
 	var self = this
 
-	self.model = 0
-	self.states = {}
 	self.system = system
-	self.inputs = {}
 
 	self.instance_errors = 0
 	self.instance_warns = 0
@@ -74,6 +71,7 @@ instance.prototype.init = function () {
 	self.pages = {}
 	self.bank_info = {}
 	self.pageHistory = {}
+	self.custom_variables = {}
 
 	self.feedback_variable_subscriptions = {}
 
@@ -119,6 +117,9 @@ instance.prototype.init = function () {
 	self.addSystemCallback('variable_instance_definitions_set', self.variable_list_update.bind(self))
 	self.addSystemCallback('variables_changed', self.variables_changed.bind(self))
 	self.variable_list_update()
+
+	self.addSystemCallback('custom_variables_update', self.custom_variable_list_update.bind(self))
+	self.custom_variable_list_update()
 
 	// self.init_feedback() // called by variable_list_update
 	self.checkFeedbacks()
@@ -189,6 +190,22 @@ instance.prototype.banks_getall = function () {
 
 		self.setVariables(new_values)
 	})
+}
+
+instance.prototype.custom_variable_list_update = function (data) {
+	const self = this
+
+	if (data) {
+		self.custom_variables = data
+	} else {
+		self.system.emit('custom_variables_get', (d) => {
+			self.custom_variables = d
+		})
+	}
+
+	console.log(data, self.custom_variables)
+
+	self.init_actions()
 }
 
 instance.prototype.check_var_recursion = function (v, realText) {
@@ -730,6 +747,27 @@ instance.prototype.init_actions = function (system) {
 		app_exit: {
 			label: 'Kill companion',
 		},
+		custom_variable_set_value: {
+			label: 'Set custom variable value',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Custom variable',
+					id: 'name',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: `${id} - ${info.description}`,
+					})),
+				},
+				{
+					type: 'textinput',
+					label: 'Value',
+					id: 'value',
+					default: '',
+				},
+			],
+		},
 	}
 
 	if (self.system.listenerCount('restart') > 0) {
@@ -773,7 +811,9 @@ instance.prototype.action = function (action, extras) {
 		self.userconfig = userconfig
 	})
 
-	if (id == 'instance_control') {
+	if (id == 'custom_variable_set_value') {
+		self.system.emit('custom_variable_set_value', opt.name, opt.value)
+	} else if (id == 'instance_control') {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true')
 	} else if (id == 'set_page') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
