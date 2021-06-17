@@ -757,7 +757,7 @@ instance.prototype.init_actions = function (system) {
 					default: Object.keys(self.custom_variables)[0],
 					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
 						id: id,
-						label: `${id} - ${info.description}`,
+						label: id,
 					})),
 				},
 				{
