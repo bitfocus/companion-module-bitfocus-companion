@@ -406,10 +406,10 @@ instance.prototype.init_actions = function (system) {
 		id: 'self',
 	})
 
-	for (var i = 0; i < self.devices.length; ++i) {
+	for (const device of self.devices) {
 		self.CHOICES_SURFACES.push({
-			label: self.devices[i].type + ' (' + self.devices[i].serialnumber + ')',
-			id: self.devices[i].serialnumber,
+			label: `${device.name || device.type} (${device.serialnumber})`,
+			id: device.serialnumber,
 		})
 	}
 
@@ -1388,9 +1388,9 @@ function compareValues(op, value, value2) {
 		case 'lt':
 			return value < parseFloat(value2)
 		case 'ne':
-			return (value2 + '') != (value + '')
+			return value2 + '' != value + ''
 		default:
-			return (value2 + '') == (value + '')
+			return value2 + '' == value + ''
 	}
 }
 
