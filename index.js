@@ -313,11 +313,11 @@ instance.prototype.variables_changed = function (changed_variables, removed_vari
 
 	let affected_ids = []
 
-	for (const [id, name] of Object.entries(self.feedback_variable_subscriptions)) {
-		for (let index = 0; index < name.length; index++) {
-			const element = name[index];
-			if (all_changed_variables.has(element)) {
+	for (const [id, names] of Object.entries(self.feedback_variable_subscriptions)) {
+		for (const name of names) {
+			if (all_changed_variables.has(name)) {
 				affected_ids.push(id)
+				break
 			}
 		}
 	}
@@ -1355,6 +1355,19 @@ instance.prototype.init_feedback = function () {
 	self.setFeedbackDefinitions(feedbacks)
 }
 
+function compareValues(op, value, value2) {
+	switch (op) {
+		case 'gt':
+			return value > parseFloat(value2)
+		case 'lt':
+			return value < parseFloat(value2)
+		case 'ne':
+			return (value2 + '') != (value + '')
+		default:
+			return (value2 + '') == (value + '')
+	}
+}
+
 instance.prototype.feedback = function (feedback, bank, info) {
 	var self = this
 
@@ -1384,16 +1397,7 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		const id = feedback.options.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
 
-		switch (feedback.options.op) {
-			case 'gt':
-				return value > parseFloat(feedback.options.value)
-			case 'lt':
-				return value < parseFloat(feedback.options.value)
-			case 'ne':
-				return feedback.options.value + '' != value
-			default:
-				return feedback.options.value + '' == value
-		}
+		return compareValues(feedback.options.op, value, feedback.options.value)
 	} else if (feedback.type == 'variable_variable') {
 		let value = ''
 		let value2 = ''
@@ -1402,16 +1406,7 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
 		self.system.emit('variable_get', id2[0], id2[1], (v) => (value2 = v))
 
-		switch (feedback.options.op) {
-			case 'gt':
-				return value > value2
-			case 'lt':
-				return value < value2
-			case 'ne':
-				return value2 + '' != value
-			default:
-				return value2 + '' == value
-		}
+		return compareValues(feedback.options.op, value, value2)
 	} else if (feedback.type == 'instance_status') {
 		if (feedback.options.instance_id == 'all') {
 			if (self.instance_errors > 0) {
