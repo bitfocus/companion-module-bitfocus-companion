@@ -813,23 +813,28 @@ instance.prototype.action = function (action, extras) {
 	var opt = action.options
 	var thePage = opt.page
 	var theBank = opt.bank
+	var theController = opt.controller
 
-	if (self.BUTTON_ACTIONS.includes(id)) {
-		if (0 == opt.bank) {
-			// 'this' button
-			//			thePage = extras.page;
-			theBank = extras.bank
+	if (extras) {
+		if (self.BUTTON_ACTIONS.includes(id)) {
+			if (0 == opt.bank) {
+				// 'this' button
+				//			thePage = extras.page;
+				theBank = extras.bank
+			}
+			if (0 == opt.page) {
+				// 'this' page
+				thePage = extras.page
+			}
+		} else if (self.PAGE_ACTIONS.includes(id)) {
+			if (0 == opt.page) {
+				// 'this' page
+				thePage = extras.page
+			}
 		}
-		if (0 == opt.page) {
-			// 'this' page
-			thePage = extras.page
-		}
-	}
 
-	if (self.PAGE_ACTIONS.includes(id)) {
-		if (0 == opt.page) {
-			// 'this' page
-			thePage = extras.page
+		if (theController == 'self') {
+			theController = extras.deviceid
 		}
 	}
 
@@ -848,12 +853,11 @@ instance.prototype.action = function (action, extras) {
 	} else if (id == 'instance_control') {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true')
 	} else if (id == 'set_page') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
-		self.changeControllerPage(surface, thePage, extras.page)
+		self.changeControllerPage(theController, thePage)
 	} else if (id == 'set_page_byindex') {
 		if (opt.controller < self.devices.length) {
 			var surface = self.devices[opt.controller].serialnumber
-			self.changeControllerPage(surface, thePage, extras.page)
+			self.changeControllerPage(surface, thePage)
 		} else {
 			self.log(
 				'warn',
@@ -865,47 +869,67 @@ instance.prototype.action = function (action, extras) {
 			)
 		}
 	} else if (id == 'inc_page') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
-		self.changeControllerPage(surface, Math.min(99, parseInt(extras.page) + 1), extras.page)
+		let fromPage = undefined
+		self.system.emit('device_page_get', theController, function (page) {
+			fromPage = page
+		})
+
+		let toPage = parseInt(fromPage) + 1
+		if (toPage > 99) toPage = 1
+
+		self.changeControllerPage(theController, toPage, fromPage)
 	} else if (id == 'dec_page') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
-		self.changeControllerPage(surface, Math.max(1, parseInt(extras.page) - 1), extras.page)
+		let fromPage = undefined
+		self.system.emit('device_page_get', theController, function (page) {
+			fromPage = page
+		})
+
+		let toPage = parseInt(fromPage) - 1
+		if (toPage < 1) toPage = 99
+
+		self.changeControllerPage(theController, toPage, fromPage)
 	} else if (id == 'lockout_device') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
 		if (self.userconfig.pin_enable) {
 			// Change page after this runloop
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface)
+			if (extras) {
+				self.system.emit('bank_pressed', extras.page, extras.bank, false, theController)
+			}
 			setImmediate(function () {
 				if (self.userconfig.link_lockouts) {
 					self.system.emit('lockoutall')
 				} else {
-					self.system.emit('lockout_device', surface, opt.page)
+					self.system.emit('lockout_device', theController, opt.page)
 				}
 			})
 		}
 	} else if (id == 'unlockout_device') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
 		if (self.userconfig.pin_enable) {
 			// Change page after this runloop
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface)
+			if (extras) {
+				self.system.emit('bank_pressed', extras.page, extras.bank, false, theController)
+			}
 			setImmediate(function () {
 				if (self.userconfig.link_lockouts) {
 					self.system.emit('unlockoutall')
 				} else {
-					self.system.emit('unlockout_device', surface, opt.page)
+					self.system.emit('unlockout_device', theController, opt.page)
 				}
 			})
 		}
 	} else if (id == 'lockout_all') {
 		if (self.userconfig.pin_enable) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface)
+			if (extras) {
+				self.system.emit('bank_pressed', extras.page, extras.bank, false, surface)
+			}
 			setImmediate(function () {
 				self.system.emit('lockoutall')
 			})
 		}
 	} else if (id == 'unlockout_all') {
 		if (self.userconfig.pin_enable) {
-			self.system.emit('bank_pressed', extras.page, extras.bank, false, surface)
+			if (extras) {
+				self.system.emit('bank_pressed', extras.page, extras.bank, false, surface)
+			}
 			setImmediate(function () {
 				self.system.emit('unlockoutall')
 			})
@@ -923,15 +947,12 @@ instance.prototype.action = function (action, extras) {
 	} else if (id == 'button_text') {
 		self.system.emit('bank_changefield', thePage, theBank, 'text', opt.label)
 	} else if (id == 'button_pressrelease') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
-		self.system.emit('bank_pressed', thePage, theBank, true, surface)
-		self.system.emit('bank_pressed', thePage, theBank, false, surface)
+		self.system.emit('bank_pressed', thePage, theBank, true, theController)
+		self.system.emit('bank_pressed', thePage, theBank, false, theController)
 	} else if (id == 'button_press') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
-		self.system.emit('bank_pressed', thePage, theBank, true, surface)
+		self.system.emit('bank_pressed', thePage, theBank, true, theController)
 	} else if (id == 'button_release') {
-		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
-		self.system.emit('bank_pressed', thePage, theBank, false, surface)
+		self.system.emit('bank_pressed', thePage, theBank, false, theController)
 	} else if (id == 'exec') {
 		if (opt.path !== undefined) {
 			debug("Running path: '" + opt.path + "'")
@@ -957,6 +978,12 @@ instance.prototype.action = function (action, extras) {
 
 instance.prototype.changeControllerPage = function (surface, page, from) {
 	var self = this
+
+	if (from === undefined) {
+		self.system.emit('device_page_get', theController, function (page) {
+			from = page
+		})
+	}
 
 	// no history yet
 	// start with the current (from) page
