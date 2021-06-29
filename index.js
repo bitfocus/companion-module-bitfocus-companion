@@ -8,10 +8,7 @@ var log
 function instance(system, id, config) {
 	var self = this
 
-	self.model = 0
-	self.states = {}
 	self.system = system
-	self.inputs = {}
 
 	self.instance_errors = 0
 	self.instance_warns = 0
@@ -74,6 +71,7 @@ instance.prototype.init = function () {
 	self.pages = {}
 	self.bank_info = {}
 	self.pageHistory = {}
+	self.custom_variables = {}
 
 	self.feedback_variable_subscriptions = {}
 
@@ -120,11 +118,15 @@ instance.prototype.init = function () {
 	self.addSystemCallback('variables_changed', self.variables_changed.bind(self))
 	self.variable_list_update()
 
+	self.addSystemCallback('custom_variables_update', self.custom_variable_list_update.bind(self))
+	self.custom_variable_list_update()
+
 	// self.init_feedback() // called by variable_list_update
 	self.checkFeedbacks()
 	self.update_variables()
 
 	self.subscribeFeedbacks('variable_value')
+	self.subscribeFeedbacks('variable_variable')
 
 	self.status(self.STATE_OK)
 }
@@ -189,6 +191,22 @@ instance.prototype.banks_getall = function () {
 
 		self.setVariables(new_values)
 	})
+}
+
+instance.prototype.custom_variable_list_update = function (data) {
+	const self = this
+
+	if (data) {
+		self.custom_variables = data
+	} else {
+		self.system.emit('custom_variables_get', (d) => {
+			self.custom_variables = d
+		})
+	}
+
+	self.update_variables()
+
+	self.init_actions()
 }
 
 instance.prototype.check_var_recursion = function (v, realText) {
@@ -295,9 +313,12 @@ instance.prototype.variables_changed = function (changed_variables, removed_vari
 
 	let affected_ids = []
 
-	for (const [id, name] of Object.entries(self.feedback_variable_subscriptions)) {
-		if (all_changed_variables.has(name)) {
-			affected_ids.push(id)
+	for (const [id, names] of Object.entries(self.feedback_variable_subscriptions)) {
+		for (const name of names) {
+			if (all_changed_variables.has(name)) {
+				affected_ids.push(id)
+				break
+			}
 		}
 	}
 
@@ -730,6 +751,50 @@ instance.prototype.init_actions = function (system) {
 		app_exit: {
 			label: 'Kill companion',
 		},
+		custom_variable_set_value: {
+			label: 'Set custom variable value',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Custom variable',
+					id: 'name',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				},
+				{
+					type: 'textinput',
+					label: 'Value',
+					id: 'value',
+					default: '',
+				},
+			],
+		},
+		custom_variable_store_variable: {
+			label: 'Store variable value to custom variable',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Custom variable',
+					id: 'name',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				},
+				{
+					type: 'dropdown',
+					id: 'variable',
+					label: 'Variable to store value from',
+					tooltip: 'What variable to store in the custom variable?',
+					default: 'internal:time_hms',
+					choices: self.CHOICES_VARIABLES,
+				},
+			],
+		},
 	}
 
 	if (self.system.listenerCount('restart') > 0) {
@@ -773,7 +838,14 @@ instance.prototype.action = function (action, extras) {
 		self.userconfig = userconfig
 	})
 
-	if (id == 'instance_control') {
+	if (id == 'custom_variable_set_value') {
+		self.system.emit('custom_variable_set_value', opt.name, opt.value)
+	} else if (id == 'custom_variable_store_variable') {
+		let value = ''
+		const id = opt.variable.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
+		self.system.emit('custom_variable_set_value', opt.name, value)
+	} else if (id == 'instance_control') {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true')
 	} else if (id == 'set_page') {
 		var surface = opt.controller == 'self' ? extras.deviceid : opt.controller
@@ -962,7 +1034,7 @@ function getNetworkInterfaces() {
 	return interfaces
 }
 
-instance.prototype.update_variables = function (system) {
+instance.prototype.update_variables = function () {
 	var self = this
 	var variables = []
 	var adapters = self.adapters
@@ -1036,6 +1108,13 @@ instance.prototype.update_variables = function (system) {
 		label: 'Jog position',
 		name: 'jog',
 	})
+
+	for (const [name, info] of Object.entries(self.custom_variables)) {
+		variables.push({
+			label: info.description,
+			name: `custom_${name}`,
+		})
+	}
 
 	self.setVariableDefinitions(variables)
 
@@ -1217,14 +1296,75 @@ instance.prototype.init_feedback = function () {
 		],
 		subscribe: (fb) => {
 			if (fb.options.variable) {
-				self.feedback_variable_subscriptions[fb.id] = fb.options.variable
+				self.feedback_variable_subscriptions[fb.id] = [fb.options.variable]
 			}
 		},
 		unsubscribe: (fb) => {
 			delete self.feedback_variable_subscriptions[fb.id]
 		},
 	}
+	feedbacks['variable_variable'] = {
+		type: 'boolean',
+		label: 'Compare variable to variable',
+		description: 'Change style based on a variable compared to another variable',
+		style: {
+			color: self.rgb(255, 255, 255),
+			bgcolor: self.rgb(255, 0, 0),
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Compare Variable',
+				tooltip: 'What variable to act on?',
+				id: 'variable',
+				default: 'internal:time_hms',
+				choices: self.CHOICES_VARIABLES,
+			},
+			{
+				type: 'dropdown',
+				label: 'Operation',
+				id: 'op',
+				default: 'eq',
+				choices: [
+					{ id: 'eq', label: '=' },
+					{ id: 'ne', label: '!=' },
+					{ id: 'gt', label: '>' },
+					{ id: 'lt', label: '<' },
+				],
+			},
+			{
+				type: 'dropdown',
+				label: 'Against Variable',
+				tooltip: 'What variable to compare with?',
+				id: 'variable2',
+				default: 'internal:time_hms',
+				choices: self.CHOICES_VARIABLES,
+			},
+		],
+		subscribe: (fb) => {
+			if (fb.options.variable || fb.options.variable2) {
+				self.feedback_variable_subscriptions[fb.id] = [fb.options.variable, fb.options.variable2]
+			}
+		},
+		unsubscribe: (fb) => {
+			delete self.feedback_variable_subscriptions[fb.id]
+		},
+	}
+
 	self.setFeedbackDefinitions(feedbacks)
+}
+
+function compareValues(op, value, value2) {
+	switch (op) {
+		case 'gt':
+			return value > parseFloat(value2)
+		case 'lt':
+			return value < parseFloat(value2)
+		case 'ne':
+			return (value2 + '') != (value + '')
+		default:
+			return (value2 + '') == (value + '')
+	}
 }
 
 instance.prototype.feedback = function (feedback, bank, info) {
@@ -1256,16 +1396,16 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		const id = feedback.options.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
 
-		switch (feedback.options.op) {
-			case 'gt':
-				return value > parseFloat(feedback.options.value)
-			case 'lt':
-				return value < parseFloat(feedback.options.value)
-			case 'ne':
-				return feedback.options.value + '' != value
-			default:
-				return feedback.options.value + '' == value
-		}
+		return compareValues(feedback.options.op, value, feedback.options.value)
+	} else if (feedback.type == 'variable_variable') {
+		let value = ''
+		let value2 = ''
+		const id = feedback.options.variable.split(':')
+		const id2 = feedback.options.variable2.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
+		self.system.emit('variable_get', id2[0], id2[1], (v) => (value2 = v))
+
+		return compareValues(feedback.options.op, value, value2)
 	} else if (feedback.type == 'instance_status') {
 		if (feedback.options.instance_id == 'all') {
 			if (self.instance_errors > 0) {
