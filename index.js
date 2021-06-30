@@ -980,7 +980,7 @@ instance.prototype.changeControllerPage = function (surface, page, from) {
 	var self = this
 
 	if (from === undefined) {
-		self.system.emit('device_page_get', theController, function (page) {
+		self.system.emit('device_page_get', surface, function (page) {
 			from = page
 		})
 	}
