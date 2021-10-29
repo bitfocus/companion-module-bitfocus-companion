@@ -772,6 +772,27 @@ instance.prototype.init_actions = function (system) {
 				},
 			],
 		},
+		custom_variable_set_expression: {
+			label: 'Set custom variable expression',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Custom variable',
+					id: 'name',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Expression',
+					id: 'expression',
+					default: '',
+				},
+			],
+		},
 		custom_variable_store_variable: {
 			label: 'Store variable value to custom variable',
 			options: [
@@ -845,6 +866,8 @@ instance.prototype.action = function (action, extras) {
 
 	if (id == 'custom_variable_set_value') {
 		self.system.emit('custom_variable_set_value', opt.name, opt.value)
+	} else if (id === 'custom_variable_set_expression') {
+		self.system.emit('custom_variable_set_expression', opt.name, opt.expression)
 	} else if (id == 'custom_variable_store_variable') {
 		let value = ''
 		const id = opt.variable.split(':')
