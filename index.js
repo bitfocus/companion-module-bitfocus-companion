@@ -489,6 +489,28 @@ instance.prototype.init_actions = function (system) {
 				},
 			],
 		},
+		set_brightness: {
+			label: 'Set surface with s/n brightness',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Surface / controller',
+					id: 'controller',
+					default: 'self',
+					choices: self.CHOICES_SURFACES,
+				},
+				{
+					type: 'number',
+					label: 'Brightness',
+					id: 'brightness',
+					default: 100,
+					min: 0,
+					max: 100,
+					step: 1,
+					range: true,
+				},
+			],
+		},
 		lockout_device: {
 			label: 'Trigger a device to lockout immediately.',
 			options: [
@@ -877,6 +899,8 @@ instance.prototype.action = function (action, extras) {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true')
 	} else if (id == 'set_page') {
 		self.changeControllerPage(theController, thePage)
+	} else if (id == 'set_brightness') {
+		self.system.emit('device_brightness_set', theController, opt.brightness)
 	} else if (id == 'set_page_byindex') {
 		if (opt.controller < self.devices.length) {
 			var surface = self.devices[opt.controller].serialnumber
