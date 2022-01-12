@@ -1,11 +1,11 @@
 {
 	"name": "bitfocus-companion",
-	"version": "1.7.0",
+	"version": "1.7.1",
 	"api_version": "1.0.0",
 	"description": "Internal functions",
 	"keywords": [],
 	"manufacturer": "Bitfocus",
-	"product": "companion",
+	"product": "Companion",
 	"shortname": "companion",
 	"main": "index.js",
 	"scripts": {
@@ -24,7 +24,7 @@
 		"Jeff Martin <dist@dist.dev>",
 		"John A Knight Jr <istnv@ayesti.com>",
 		"Dorian Meid <dnmeid@gmx.net>",
-		"Bjorn Peterson <bjkarl@yahoo.comn>"
+		"Bjorn Peterson <bjkarl@yahoo.com>"
 	],
 	"bugs": {
 		"url": "https://github.com/bitfocus/companion-module-bitfous-companion/issues"

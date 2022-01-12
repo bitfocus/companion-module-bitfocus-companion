@@ -540,7 +540,7 @@ instance.prototype.init_actions = function (system) {
 			options: [
 				{
 					type: 'textinput',
-					label: 'Path',
+					label: 'Path (supports variables in path)',
 					id: 'path',
 				},
 				{
@@ -1002,9 +1002,13 @@ instance.prototype.action = function (action, extras) {
 		self.system.emit('bank_pressed', thePage, theBank, false, theController)
 	} else if (id == 'exec') {
 		if (opt.path !== undefined) {
-			debug("Running path: '" + opt.path + "'")
+			let path = opt.path
+			self.parseVariables(path, function (value) {
+				path = value;
+			});
+			debug("Running path: '" + path + "'")
 			exec(
-				opt.path,
+				path,
 				{
 					timeout: opt.timeout === undefined ? 5000 : opt.timeout,
 				},
