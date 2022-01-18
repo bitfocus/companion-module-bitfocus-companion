@@ -1,5 +1,5 @@
 module.exports = function () {
-	return [upgrade15to32, upgrade_one2bank, instance_status_colors]
+	return [upgrade15to32, upgrade_one2bank, instance_status_colors, latch_to_stepped_pushed]
 }
 
 // Version 1 = from 15 to 32 keys config
@@ -62,6 +62,19 @@ function instance_status_colors(context, config, actions, feedbacks) {
 				fb.options.error_bg = self.rgb(200, 0, 0)
 				changed = true
 			}
+		}
+	}
+
+	return changed
+}
+
+// stepped buttons
+function latch_to_stepped_pushed(context, config, actions, feedbacks) {
+	let changed = false
+
+	for (const feedback of feedbacks) {
+		if (feedback.type == 'bank_pushed') {
+			feedback.options.latch_compatability = true
 		}
 	}
 

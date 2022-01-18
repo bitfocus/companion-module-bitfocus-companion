@@ -1419,6 +1419,12 @@ instance.prototype.init_feedback = function () {
 				default: '0',
 				choices: self.CHOICES_BANKS,
 			},
+			{
+				type: 'checkbox',
+				label: 'Treat stepped as pressed? (latch compatability)',
+				id: 'latch_compatability',
+				default: false,
+			},
 		],
 	}
 	feedbacks['variable_value'] = {
@@ -1587,6 +1593,14 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		self.system.emit('graphics_is_pushed', thePage, theBank, function (pushed) {
 			isPushed = pushed
 		})
+		if (!isPushed && feedback.options.latch_compatability) {
+			if (self.banks[thePage] && self.banks[thePage][theBank] && self.banks[thePage][theBank].style === 'step') {
+				const pageSteps = self.bank_step[thePage]
+				if (pageSteps) {
+					isPushed = pageSteps[theBank] === 0
+				}
+			}
+		}
 
 		return isPushed
 	} else if (feedback.type == 'bank_current_step') {
