@@ -2,6 +2,7 @@ var instance_skel = require('../../instance_skel')
 let os = require('os')
 var exec = require('child_process').exec
 var GetUpgradeScripts = require('./upgrades')
+const _ = require('underscore')
 var debug
 var log
 
@@ -69,7 +70,7 @@ instance.prototype.init = function () {
 	self.instances = {}
 	self.active = {}
 	self.pages = {}
-	self.bank_info = {}
+	self.cached_bank_info = {}
 	self.pageHistory = {}
 	self.custom_variables = {}
 
@@ -106,7 +107,7 @@ instance.prototype.init = function () {
 	self.bind_ip_get()
 	self.addSystemCallback('ip_rebind', self.bind_ip_get.bind(self))
 
-	self.banks_getall()
+	self.raw_banks_getall()
 	self.addSystemCallback('graphics_bank_invalidate', self.bank_invalidate.bind(self))
 
 	self.addSystemCallback('graphics_indicate_push', self.bank_indicate_push.bind(self))
@@ -170,21 +171,21 @@ instance.prototype.banks_getall = function () {
 	var self = this
 
 	system.emit('db_get', 'bank', function (banks) {
-		self.banks = banks
+		self.raw_banks = banks
 
 		const new_values = {}
 
 		for (var p in banks) {
 			for (var b in banks[p]) {
 				var tb = banks[p][b]
-				var k = `${p}_${b}`
-				var v = `b_text_${k}`
+				var cacheKey = `${p}_${b}`
+				var variableId = `b_text_${cacheKey}`
 				if (tb.style === 'png') {
 					// need a copy, not a reference
-					self.bank_info[k] = JSON.parse(JSON.stringify(tb))
-					new_values[v] = self.bank_info[k].text = self.check_var_recursion(v, tb.text)
+					self.cached_bank_info[cacheKey] = JSON.parse(JSON.stringify(tb))
+					new_values[variableId] = self.cached_bank_info[cacheKey].text = self.check_var_recursion(variableId, tb.text)
 				} else {
-					new_values[v] = undefined
+					new_values[variableId] = undefined
 				}
 			}
 		}
@@ -229,49 +230,37 @@ instance.prototype.check_var_recursion = function (v, realText) {
 
 instance.prototype.bank_invalidate = function (page, bank) {
 	var self = this
-	var k = `${page}_${bank}`
-	var v = `b_text_${k}`
-	var oldText
-	var newText
-	var realText = self.banks[page][bank].text
+	const cacheId = `${page}_${bank}`
+	const variableId = `b_text_${cacheId}`
 
-	if (!self.bank_info[k]) {
+	if (!self.cached_bank_info[cacheId]) {
 		// new key
-		self.bank_info[k] = JSON.parse(JSON.stringify(self.banks[page][bank]))
-	}
-	if (self.bank_info[k].text) {
-		oldText = self.bank_info[k].text
+		self.cached_bank_info[cacheId] = JSON.parse(JSON.stringify(self.raw_banks[page][bank]))
 	}
 
+	const oldText = self.cached_bank_info[cacheId].text
 
 	// Fetch feedback-overrides for bank
-	var o = self.bank_info[k]
-	var n = JSON.parse(JSON.stringify(self.banks[page][bank]))
-	var changed = false
 	system.emit('feedback_get_style', page, bank, function (style) {
-		// feedback override?
-		if (style !== undefined) {
-			n = style
+		// ffigure out the new combined style
+		const newStyle = {
+			...JSON.parse(JSON.stringify(self.raw_banks[page][bank])),
+			...style
 		}
-		// copy feedbacks
-		for (var key of Object.keys(n)) {
-			changed = changed || o[key] != n[key]
-			o[key] = n[key]
+
+		// check if there was a change
+		if (!_.isEqual(newStyle, self.cached_bank_info[cacheId])) {
+			self.cached_bank_info[cacheId] = newStyle
+			self.checkFeedbacks('bank_style')
 		}
-		// save new text for 'b_text' variable
-		if (n['text']) {
-			realText = n['text']
-		}
+
 	})
-	if (changed) {
-		self.checkFeedbacks('bank_style')
-	}
 
-	newText = self.check_var_recursion(v, realText)
-
+	// Check if the text has changed
+	const newText = self.check_var_recursion(variableId, self.cached_bank_info[cacheId].text)
+	self.cached_bank_info[cacheId].text = newText
 	if (oldText !== newText) {
-		self.bank_info[k].text = newText
-		self.setVariable(`b_text_${k}`, newText)
+		self.setVariable(variableId, newText)
 	}
 }
 
@@ -1454,7 +1443,7 @@ instance.prototype.feedback = function (feedback, bank, info) {
 	var self = this
 
 	if (feedback.type == 'bank_style') {
-		var b = self.bank_info[`${feedback.options.page}_${feedback.options.bank}`]
+		var b = self.cached_bank_info[`${feedback.options.page}_${feedback.options.bank}`]
 		if (b !== undefined) {
 			return {
 				color: b.color,

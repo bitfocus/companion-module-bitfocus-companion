@@ -29,5 +29,8 @@
 	"bugs": {
 		"url": "https://github.com/bitfocus/companion-module-bitfous-companion/issues"
 	},
-	"homepage": "https://github.com/bitfocus/companion-module-bitfocus-companion#readme"
+	"homepage": "https://github.com/bitfocus/companion-module-bitfocus-companion#readme",
+	"dependencies": {
+		"underscore": "^1.13.2"
+	}
 }
