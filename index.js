@@ -243,30 +243,35 @@ instance.prototype.bank_invalidate = function (page, bank) {
 		oldText = self.bank_info[k].text
 	}
 
+
+	// Fetch feedback-overrides for bank
+	var o = self.bank_info[k]
+	var n = JSON.parse(JSON.stringify(self.banks[page][bank]))
+	var changed = false
+	system.emit('feedback_get_style', page, bank, function (style) {
+		// feedback override?
+		if (style !== undefined) {
+			n = style
+		}
+		// copy feedbacks
+		for (var key of Object.keys(n)) {
+			changed = changed || o[key] != n[key]
+			o[key] = n[key]
+		}
+		// save new text for 'b_text' variable
+		if (n['text']) {
+			realText = n['text']
+		}
+	})
+	if (changed) {
+		self.checkFeedbacks('bank_style')
+	}
+
 	newText = self.check_var_recursion(v, realText)
 
 	if (oldText !== newText) {
 		self.bank_info[k].text = newText
 		self.setVariable(`b_text_${k}`, newText)
-	} else {
-		// feedback/color change
-		// Fetch feedback-overrides for bank
-		var o = self.bank_info[k]
-		var n = JSON.parse(JSON.stringify(self.banks[page][bank]))
-		var changed = false
-		system.emit('feedback_get_style', page, bank, function (style) {
-			// feedback override?
-			if (style !== undefined) {
-				n = style
-			}
-			for (var key of ['color', 'bgcolor']) {
-				changed = changed || o[key] != n[key]
-				o[key] = n[key]
-			}
-		})
-		if (changed) {
-			self.checkFeedbacks('bank_style')
-		}
 	}
 }
 
