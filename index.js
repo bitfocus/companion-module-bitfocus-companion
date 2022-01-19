@@ -1,10 +1,8 @@
-var instance_skel = require('../../instance_skel')
-let os = require('os')
-var exec = require('child_process').exec
-var GetUpgradeScripts = require('./upgrades')
+const instance_skel = require('../../instance_skel')
+const os = require('os')
+const exec = require('child_process').exec
+const GetUpgradeScripts = require('./upgrades')
 const _ = require('underscore')
-var debug
-var log
 
 function instance(system, id, config) {
 	var self = this
@@ -62,9 +60,6 @@ instance.GetUpgradeScripts = GetUpgradeScripts
 
 instance.prototype.init = function () {
 	var self = this
-
-	debug = self.debug
-	log = self.log
 
 	self.callbacks = {}
 	self.instances = {}
@@ -1000,7 +995,7 @@ instance.prototype.action = function (action, extras) {
 			self.parseVariables(path, function (value) {
 				path = value;
 			});
-			debug("Running path: '" + path + "'")
+			self.debug("Running path: '" + path + "'")
 			exec(
 				path,
 				{
@@ -1008,8 +1003,8 @@ instance.prototype.action = function (action, extras) {
 				},
 				function (error, stdout, stderr) {
 					if (error) {
-						log('error', 'Shell command failed. Guru meditation: ' + JSON.stringify(error))
-						debug(error)
+						self.log('error', 'Shell command failed. Guru meditation: ' + JSON.stringify(error))
+						self.debug(error)
 					}
 				}
 			)
