@@ -244,7 +244,6 @@ instance.prototype.bank_invalidate = function (page, bank) {
 		}
 
 		// check if there was a change
-		console.log(_.isEqual(newStyle, self.cached_bank_info[cacheId]), cacheId)
 		if (!_.isEqual(newStyle, self.cached_bank_info[cacheId])) {
 			self.cached_bank_info[cacheId] = newStyle
 			self.checkFeedbacks('bank_style')
