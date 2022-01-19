@@ -1419,7 +1419,6 @@ instance.prototype.init_feedback = function () {
 		},
 	}
 
-	console.log('init feedback')
 	self.setFeedbackDefinitions(feedbacks)
 }
 
