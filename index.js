@@ -102,7 +102,7 @@ instance.prototype.init = function () {
 	self.bind_ip_get()
 	self.addSystemCallback('ip_rebind', self.bind_ip_get.bind(self))
 
-	self.raw_banks_getall()
+	self.banks_getall()
 	self.addSystemCallback('graphics_bank_invalidate', self.bank_invalidate.bind(self))
 
 	self.addSystemCallback('graphics_indicate_push', self.bank_indicate_push.bind(self))
@@ -244,6 +244,7 @@ instance.prototype.bank_invalidate = function (page, bank) {
 		}
 
 		// check if there was a change
+		console.log(_.isEqual(newStyle, self.cached_bank_info[cacheId]), cacheId)
 		if (!_.isEqual(newStyle, self.cached_bank_info[cacheId])) {
 			self.cached_bank_info[cacheId] = newStyle
 			self.checkFeedbacks('bank_style')
@@ -1277,8 +1278,8 @@ instance.prototype.init_feedback = function () {
 		],
 	}
 	feedbacks['bank_style'] = {
-		label: 'Use another buttons color',
-		description: 'Imitate the colors of another button',
+		label: 'Use another buttons style',
+		description: 'Imitate the style of another button',
 		options: [
 			{
 				type: 'dropdown',
@@ -1418,6 +1419,7 @@ instance.prototype.init_feedback = function () {
 		},
 	}
 
+	console.log('init feedback')
 	self.setFeedbackDefinitions(feedbacks)
 }
 
@@ -1438,13 +1440,13 @@ instance.prototype.feedback = function (feedback, bank, info) {
 	var self = this
 
 	if (feedback.type == 'bank_style') {
-		var b = self.cached_bank_info[`${feedback.options.page}_${feedback.options.bank}`]
-		if (b !== undefined) {
-			return {
-				color: b.color,
-				bgcolor: b.bgcolor,
-			}
-		}
+		let thePage = feedback.options.page
+		let theBank = feedback.options.bank
+
+		if (info && thePage == '0') thePage = info.page
+		if (info && theBank == '0') theBank = info.bank
+
+		return self.cached_bank_info[`${thePage}_${theBank}`]  
 	} else if (feedback.type == 'bank_pushed') {
 		let thePage = feedback.options.page
 		let theBank = feedback.options.bank
