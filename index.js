@@ -5,7 +5,7 @@ const GetUpgradeScripts = require('./upgrades')
 const _ = require('underscore')
 
 function instance(system, id, config) {
-	var self = this
+	let self = this
 
 	self.system = system
 
@@ -59,7 +59,7 @@ function instance(system, id, config) {
 instance.GetUpgradeScripts = GetUpgradeScripts
 
 instance.prototype.init = function () {
-	var self = this
+	let self = this
 
 	self.callbacks = {}
 	self.instances = {}
@@ -77,7 +77,7 @@ instance.prototype.init = function () {
 	self.CHOICES_BANKS = [{ label: 'This button', id: 0 }]
 	self.CHOICES_VARIABLES = []
 
-	for (var bank = 1; bank <= global.MAX_BUTTONS; bank++) {
+	for (let bank = 1; bank <= global.MAX_BUTTONS; bank++) {
 		self.CHOICES_BANKS.push({ label: bank, id: bank })
 	}
 
@@ -128,9 +128,9 @@ instance.prototype.init = function () {
 }
 
 instance.prototype.bind_ip_get = function () {
-	var self = this
-	var adapters = getNetworkInterfaces.apply(self)
-	var ip = ''
+	let self = this
+	let adapters = getNetworkInterfaces.apply(self)
+	let ip = ''
 
 	const new_values = {}
 
@@ -148,7 +148,7 @@ instance.prototype.bind_ip_get = function () {
 }
 
 instance.prototype.pages_getall = function () {
-	var self = this
+	let self = this
 
 	self.system.emit('get_page', function (pages) {
 		self.pages = pages
@@ -156,25 +156,25 @@ instance.prototype.pages_getall = function () {
 }
 
 instance.prototype.pages_update = function () {
-	var self = this
+	let self = this
 
 	// Update dropdowns
 	self.init_actions()
 }
 
 instance.prototype.banks_getall = function () {
-	var self = this
+	let self = this
 
-	system.emit('db_get', 'bank', function (banks) {
+	self.system.emit('db_get', 'bank', function (banks) {
 		self.raw_banks = banks
 
 		const new_values = {}
 
-		for (var p in banks) {
-			for (var b in banks[p]) {
-				var tb = banks[p][b]
-				var cacheKey = `${p}_${b}`
-				var variableId = `b_text_${cacheKey}`
+		for (let p in banks) {
+			for (let b in banks[p]) {
+				let tb = banks[p][b]
+				let cacheKey = `${p}_${b}`
+				let variableId = `b_text_${cacheKey}`
 				if (tb.style === 'png') {
 					// need a copy, not a reference
 					self.cached_bank_info[cacheKey] = JSON.parse(JSON.stringify(tb))
@@ -206,8 +206,8 @@ instance.prototype.custom_variable_list_update = function (data) {
 }
 
 instance.prototype.check_var_recursion = function (v, realText) {
-	var self = this
-	var newText
+	let self = this
+	let newText
 
 	if (realText) {
 		if (realText.includes(v)) {
@@ -215,7 +215,7 @@ instance.prototype.check_var_recursion = function (v, realText) {
 			// button trying to include itself
 			newText = '$RE'
 		} else {
-			system.emit('variable_parse', realText, function (str) {
+			self.system.emit('variable_parse', realText, function (str) {
 				newText = str
 			})
 		}
@@ -224,7 +224,7 @@ instance.prototype.check_var_recursion = function (v, realText) {
 }
 
 instance.prototype.bank_invalidate = function (page, bank) {
-	var self = this
+	let self = this
 	const cacheId = `${page}_${bank}`
 	const variableId = `b_text_${cacheId}`
 
@@ -236,7 +236,7 @@ instance.prototype.bank_invalidate = function (page, bank) {
 	const oldText = self.cached_bank_info[cacheId].text
 
 	// Fetch feedback-overrides for bank
-	system.emit('feedback_get_style', page, bank, function (style) {
+	self.system.emit('feedback_get_style', page, bank, function (style) {
 		// ffigure out the new combined style
 		const newStyle = {
 			...JSON.parse(JSON.stringify(self.raw_banks[page][bank])),
@@ -260,20 +260,20 @@ instance.prototype.bank_invalidate = function (page, bank) {
 }
 
 instance.prototype.bank_indicate_push = function (page, bank, state) {
-	var self = this
+	let self = this
 
 	self.checkFeedbacks('bank_pushed')
 }
 
 instance.prototype.devices_list = function (list) {
-	var self = this
+	let self = this
 
 	self.devices = list
 	self.init_actions()
 }
 
 instance.prototype.devices_getall = function () {
-	var self = this
+	let self = this
 
 	self.system.emit('devices_list_get', function (list) {
 		self.devices = list
@@ -281,7 +281,7 @@ instance.prototype.devices_getall = function () {
 }
 
 instance.prototype.variable_list_update = function () {
-	var self = this
+	let self = this
 
 	self.system.emit('variable_get_definitions', function (list) {
 		self.CHOICES_VARIABLES = []
@@ -296,7 +296,7 @@ instance.prototype.variable_list_update = function () {
 	self.init_feedback()
 }
 instance.prototype.variables_changed = function (changed_variables, removed_variables) {
-	var self = this
+	let self = this
 
 	const all_changed_variables = new Set([...removed_variables, ...Object.keys(changed_variables)])
 
@@ -317,18 +317,18 @@ instance.prototype.variables_changed = function (changed_variables, removed_vari
 }
 
 instance.prototype.instance_save = function () {
-	var self = this
+	let self = this
 
 	self.system.emit('instance_getall', self.instance_getall.bind(self))
 }
 
 instance.prototype.instance_getall = function (instances, active) {
-	var self = this
+	let self = this
 	self.instances = instances
 	self.active = active
 	self.CHOICES_INSTANCES.length = 0
 
-	for (var key in self.instances) {
+	for (let key in self.instances) {
 		if (self.instances[key].label !== 'internal') {
 			self.CHOICES_INSTANCES.push({ label: self.instances[key].label, id: key })
 		}
@@ -340,7 +340,7 @@ instance.prototype.instance_getall = function (instances, active) {
 }
 
 instance.prototype.addSystemCallback = function (name, cb) {
-	var self = this
+	let self = this
 
 	if (self.callbacks[name] === undefined) {
 		self.callbacks[name] = cb.bind(self)
@@ -349,22 +349,22 @@ instance.prototype.addSystemCallback = function (name, cb) {
 }
 
 instance.prototype.removeAllSystemCallbacks = function () {
-	var self = this
+	let self = this
 
-	for (var key in self.callbacks) {
+	for (let key in self.callbacks) {
 		self.system.removeListener(key, self.callbacks[key])
 		delete self.callbacks[key]
 	}
 }
 
 instance.prototype.updateConfig = function (config) {
-	var self = this
+	let self = this
 	self.config = config
 }
 
 // Return config fields for web config
 instance.prototype.config_fields = function () {
-	var self = this
+	let self = this
 
 	return [
 		{
@@ -379,7 +379,7 @@ instance.prototype.config_fields = function () {
 
 // When module gets deleted
 instance.prototype.destroy = function () {
-	var self = this
+	let self = this
 	if (self.time_interval) {
 		clearInterval(self.time_interval)
 	}
@@ -387,7 +387,7 @@ instance.prototype.destroy = function () {
 }
 
 instance.prototype.init_actions = function (system) {
-	var self = this
+	let self = this
 
 	self.CHOICES_SURFACES.length = 0
 	self.CHOICES_SURFACES.push({
@@ -404,8 +404,8 @@ instance.prototype.init_actions = function (system) {
 
 	self.CHOICES_PAGES = [{ label: 'This page', id: 0 }]
 
-	for (var page in self.pages) {
-		var name = page
+	for (let page in self.pages) {
+		let name = page
 
 		if (self.pages[page].name !== undefined && self.pages[page].name != 'PAGE') {
 			name += ' (' + self.pages[page].name + ')'
@@ -840,12 +840,12 @@ instance.prototype.init_actions = function (system) {
 }
 
 instance.prototype.action = function (action, extras) {
-	var self = this
-	var id = action.action
-	var opt = action.options
-	var thePage = opt.page
-	var theBank = opt.bank
-	var theController = opt.controller
+	let self = this
+	let id = action.action
+	let opt = action.options
+	let thePage = opt.page
+	let theBank = opt.bank
+	let theController = opt.controller
 
 	if (extras) {
 		if (self.BUTTON_ACTIONS.includes(id)) {
@@ -892,7 +892,7 @@ instance.prototype.action = function (action, extras) {
 		self.system.emit('device_brightness_set', theController, opt.brightness)
 	} else if (id == 'set_page_byindex') {
 		if (opt.controller < self.devices.length) {
-			var surface = self.devices[opt.controller].serialnumber
+			let surface = self.devices[opt.controller].serialnumber
 			self.changeControllerPage(surface, thePage)
 		} else {
 			self.log(
@@ -1017,7 +1017,7 @@ instance.prototype.action = function (action, extras) {
 }
 
 instance.prototype.changeControllerPage = function (surface, page, from) {
-	var self = this
+	let self = this
 
 	if (from === undefined) {
 		self.system.emit('device_page_get', surface, function (page) {
@@ -1072,8 +1072,8 @@ instance.prototype.changeControllerPage = function (surface, page, from) {
 }
 
 function getNetworkInterfaces() {
-	var self = this
-	var interfaces = []
+	let self = this
+	let interfaces = []
 	const networkInterfaces = os.networkInterfaces()
 
 	for (const interface in networkInterfaces) {
@@ -1102,9 +1102,9 @@ function getNetworkInterfaces() {
 }
 
 instance.prototype.update_variables = function () {
-	var self = this
-	var variables = []
-	var adapters = self.adapters
+	let self = this
+	let variables = []
+	let adapters = self.adapters
 
 	if (adapters == undefined) {
 		adapters = getNetworkInterfaces.apply(self)
@@ -1201,10 +1201,10 @@ instance.prototype.update_variables = function () {
 }
 
 instance.prototype.init_feedback = function () {
-	var self = this
+	let self = this
 
-	var feedbacks = {}
-	var instance_choices = []
+	let feedbacks = {}
+	let instance_choices = []
 
 	Object.entries(self.instances).forEach((entry) => {
 		const [key, value] = entry
@@ -1435,7 +1435,7 @@ function compareValues(op, value, value2) {
 }
 
 instance.prototype.feedback = function (feedback, bank, info) {
-	var self = this
+	let self = this
 
 	if (feedback.type == 'bank_style') {
 		let thePage = feedback.options.page
@@ -1496,7 +1496,7 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		}
 
 		if (self.instance_status.hasOwnProperty(feedback.options.instance_id)) {
-			var cur_instance = self.instance_status[feedback.options.instance_id]
+			let cur_instance = self.instance_status[feedback.options.instance_id]
 
 			if (cur_instance[0] == 2) {
 				return {
