@@ -27,7 +27,7 @@
 		"Bjorn Peterson <bjkarl@yahoo.com>"
 	],
 	"bugs": {
-		"url": "https://github.com/bitfocus/companion-module-bitfous-companion/issues"
+		"url": "https://github.com/bitfocus/companion-module-bitfocus-companion/issues"
 	},
 	"homepage": "https://github.com/bitfocus/companion-module-bitfocus-companion#readme",
 	"dependencies": {
