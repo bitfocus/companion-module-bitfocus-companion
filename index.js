@@ -485,6 +485,23 @@ instance.prototype.init_actions = function (system) {
 				},
 			],
 		},
+		set_page_with_variables: {
+			label: 'Set surface with custom variable to page',
+			options: [
+				{
+					type: 'textwithvariables',
+					label: 'Surface / Controller Serial Number',
+					id: 'controller',
+					default: '',
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Page',
+					id: 'page',
+					default: '1',
+				},
+			],
+		},
 		set_brightness: {
 			label: 'Set surface with s/n brightness',
 			options: [
@@ -910,6 +927,17 @@ instance.prototype.action = function (action, extras) {
 					self.devices.length +
 					' controller(s) are available.'
 			)
+		}
+	} else if (id == 'set_page_with_variables') {
+		self.system.emit('variable_parse', action.options.controller, (value) => {
+			theController = value.replace(/\s+/g, '')
+		})
+		self.system.emit('variable_parse', action.options.page, (value) => {
+			thePage = value.replace(/\s+/g, '')
+		})
+
+		if (self.CHOICES_SURFACES.some((e) => e.id === theController) && self.CHOICES_PAGES.some((e) => e.id === thePage)) {
+			self.changeControllerPage(theController, thePage)
 		}
 	} else if (id == 'inc_page') {
 		let fromPage = undefined
