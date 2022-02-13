@@ -107,6 +107,8 @@ instance.prototype.init = function () {
 
 	self.addSystemCallback('graphics_indicate_push', self.bank_indicate_push.bind(self))
 
+	self.addSystemCallback('bank_pressed', self.bank_pressed.bind(self))
+
 	self.instance_save()
 	self.addSystemCallback('instance_save', self.instance_save.bind(self))
 
@@ -240,7 +242,7 @@ instance.prototype.bank_invalidate = function (page, bank) {
 		// ffigure out the new combined style
 		const newStyle = {
 			...JSON.parse(JSON.stringify(self.raw_banks[page][bank])),
-			...style
+			...style,
 		}
 
 		// check if there was a change
@@ -248,7 +250,6 @@ instance.prototype.bank_invalidate = function (page, bank) {
 			self.cached_bank_info[cacheId] = newStyle
 			self.checkFeedbacks('bank_style')
 		}
-
 	})
 
 	// Check if the text has changed
@@ -263,6 +264,12 @@ instance.prototype.bank_indicate_push = function (page, bank, state) {
 	let self = this
 
 	self.checkFeedbacks('bank_pushed')
+}
+
+instance.prototype.bank_pressed = function (page, bank, state) {
+	let self = this
+
+	self.checkFeedbacks('surface_on_page')
 }
 
 instance.prototype.devices_list = function (list) {
@@ -993,8 +1000,8 @@ instance.prototype.action = function (action, extras) {
 		if (opt.path !== undefined) {
 			let path = opt.path
 			self.parseVariables(path, function (value) {
-				path = value;
-			});
+				path = value
+			})
 			self.debug("Running path: '" + path + "'")
 			exec(
 				path,
@@ -1215,6 +1222,17 @@ instance.prototype.init_feedback = function () {
 		}
 	})
 
+	self.CHOICES_SURFACES_FEEDBACKS = []
+	self.CHOICES_SURFACES_FEEDBACKS.push({
+		label: 'Any surface',
+		id: 'any',
+	})
+	self.CHOICES_SURFACES.forEach((device) => {
+		if (device.id != 'self') {
+			self.CHOICES_SURFACES_FEEDBACKS.push(device)
+		}
+	})
+
 	feedbacks['instance_status'] = {
 		label: 'Companion Instance Status',
 		description: 'Change button color on Instance Status\nDisabled color is not used when "All" instances is selected',
@@ -1417,6 +1435,33 @@ instance.prototype.init_feedback = function () {
 			delete self.feedback_variable_subscriptions[fb.id]
 		},
 	}
+	feedbacks['surface_on_page'] = {
+		type: 'boolean',
+		label: 'When a surface is on the selected page',
+		description: 'Change style when a surface is on the selected page',
+		style: {
+			color: self.rgb(255, 255, 255),
+			bgcolor: self.rgb(255, 0, 0),
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Surface',
+				tooltip: 'Which surface do you want to use?',
+				id: 'surface',
+				default: 'any',
+				choices: self.CHOICES_SURFACES_FEEDBACKS,
+			},
+			{
+				type: 'dropdown',
+				label: 'Bank',
+				tooltip: 'Which page?',
+				id: 'page',
+				default: '0',
+				choices: self.CHOICES_PAGES,
+			},
+		],
+	}
 
 	self.setFeedbackDefinitions(feedbacks)
 }
@@ -1444,7 +1489,7 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		if (info && thePage == '0') thePage = info.page
 		if (info && theBank == '0') theBank = info.bank
 
-		return self.cached_bank_info[`${thePage}_${theBank}`]  
+		return self.cached_bank_info[`${thePage}_${theBank}`]
 	} else if (feedback.type == 'bank_pushed') {
 		let thePage = feedback.options.page
 		let theBank = feedback.options.bank
@@ -1533,6 +1578,27 @@ instance.prototype.feedback = function (feedback, bank, info) {
 				bgcolor: feedback.options.disabled_bg,
 			}
 		}
+	} else if (feedback.type == 'surface_on_page') {
+		let surface = feedback.options.surface
+		let targetPage = info && feedback.options.page == '0' ? info.page : feedback.options.page
+		let matchedPage = false
+
+		if (surface == 'any') {
+			let activePages = []
+			self.CHOICES_SURFACES.forEach((device) => {
+				if (device.id != 'self') {
+					self.system.emit('device_page_get', device.id, function (page) {
+						activePages.push(page?.toString())
+					})
+				}
+			})
+			matchedPage = activePages.includes(targetPage)
+		} else {
+			self.system.emit('device_page_get', surface, function (page) {
+				matchedPage = targetPage == page
+			})
+		}
+		return matchedPage
 	}
 }
 
