@@ -767,7 +767,7 @@ instance.prototype.init_actions = function (system) {
 			label: 'Button Text',
 			options: [
 				{
-					type: 'textinput',
+					type: 'textwithvariables',
 					label: 'Button Text',
 					id: 'label',
 					default: '',
@@ -1033,7 +1033,7 @@ instance.prototype.validateVariables = function (action, type) {
 		}
 
 		if (!parsed) {
-			self.log('warn', `Cannot complete action because ${value ? value : 'undefined'} is not a valid ${type}`)
+			self.debug(`${value ? value : 'undefined'} is not a valid ${type}`)
 		}
 	})
 	return parsed
@@ -1182,7 +1182,11 @@ instance.prototype.action = function (action, extras) {
 	} else if (id == 'textcolor' && thePage && theBank) {
 		self.system.emit('bank_changefield', thePage, theBank, 'color', opt.color)
 	} else if (id == 'button_text' && thePage && theBank) {
-		self.system.emit('bank_changefield', thePage, theBank, 'text', opt.label)
+		let text = ''
+		self.system.emit('variable_parse', opt.label, (value) => {
+			text = value
+		})
+		self.system.emit('bank_changefield', thePage, theBank, 'text', text)
 	} else if (id == 'button_pressrelease' && thePage && theBank) {
 		self.system.emit('bank_pressed', thePage, theBank, true, theController)
 		self.system.emit('bank_pressed', thePage, theBank, false, theController)
