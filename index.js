@@ -27,6 +27,7 @@ function instance(system, id, config) {
 		})
 
 		self.checkFeedbacks('instance_status')
+		self.checkFeedbacks('instance_custom_state')
 	})
 
 	self.time_interval = setInterval(function () {
@@ -1493,6 +1494,36 @@ instance.prototype.init_feedback = function () {
 			},
 		],
 	}
+	feedbacks['instance_custom_state'] = {
+		type: 'boolean',
+		label: 'Instance matches specified status',
+		description: 'Change style when an instance matches the specified status',
+		style: {
+			color: self.rgb(255, 255, 255),
+			bgcolor: self.rgb(0, 255, 0),
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Instance',
+				id: 'instance_id',
+				choices: self.CHOICES_INSTANCES,
+				default: self.CHOICES_INSTANCES[0] ? self.CHOICES_INSTANCES[0].id : 'No instances',
+			},
+			{
+				type: 'dropdown',
+				label: 'State',
+				id: 'state',
+				default: '0',
+				choices: [
+					{ id: 0, label: 'OK' },
+					{ id: 1, label: 'Warning' },
+					{ id: 2, label: 'Error' },
+					{ id: -1, label: 'Disabled' },
+				],
+			},
+		],
+	}
 	feedbacks['bank_style'] = {
 		label: 'Use another buttons style',
 		description: 'Imitate the style of another button',
@@ -1819,6 +1850,20 @@ instance.prototype.feedback = function (feedback, bank, info) {
 				bgcolor: feedback.options.disabled_bg,
 			}
 		}
+	} else if (feedback.type == 'instance_custom_state') {
+		let stateMatch = false
+		if (self.instance_status.hasOwnProperty(feedback.options.instance_id)) {
+			let cur_instance = self.instance_status[feedback.options.instance_id]
+			this.log('warn', cur_instance[0])
+			if (cur_instance[0] == feedback.options.state) {
+				stateMatch = true
+			}
+		} else {
+			if (feedback.options.state == -1) {
+				stateMatch = true
+			}
+		}
+		return stateMatch
 	} else if (feedback.type == 'surface_on_page' && theController) {
 		let targetPage = info && thePage == '0' ? info.page : thePage
 		let matchedPage = false
