@@ -74,7 +74,10 @@ instance.prototype.init = function () {
 	self.CHOICES_INSTANCES = []
 	self.CHOICES_SURFACES = []
 	self.CHOICES_PAGES = []
-	self.CHOICES_BANKS = [{ label: 'This button', id: 0 }]
+	self.CHOICES_BANKS = [
+		{ label: 'This button', id: 0 },
+		{ label: 'Custom variable', id: 'variable' },
+	]
 	self.CHOICES_VARIABLES = []
 
 	for (let bank = 1; bank <= global.MAX_BUTTONS; bank++) {
@@ -397,10 +400,16 @@ instance.prototype.init_actions = function (system) {
 	let self = this
 
 	self.CHOICES_SURFACES.length = 0
-	self.CHOICES_SURFACES.push({
-		label: 'Current surface',
-		id: 'self',
-	})
+	self.CHOICES_SURFACES.push(
+		{
+			label: 'Current surface',
+			id: 'self',
+		},
+		{
+			label: 'Custom variable',
+			id: 'variable',
+		}
+	)
 
 	for (const device of self.devices) {
 		self.CHOICES_SURFACES.push({
@@ -409,7 +418,10 @@ instance.prototype.init_actions = function (system) {
 		})
 	}
 
-	self.CHOICES_PAGES = [{ label: 'This page', id: 0 }]
+	self.CHOICES_PAGES = [
+		{ label: 'This page', id: 0 },
+		{ label: 'Custom variable', id: 'variable' },
+	]
 
 	for (let page in self.pages) {
 		let name = page
@@ -454,11 +466,26 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_SURFACES,
 				},
 				{
+					type: 'textwithvariables',
+					label: 'Custom Surface Variable',
+					tooltip: 'Use surface ID',
+					id: 'controllerVariable',
+					default: '',
+					isVisible: (action) => action.options.controller === 'variable',
+				},
+				{
 					type: 'dropdown',
 					label: 'Page',
 					id: 'page',
 					default: '1',
 					choices: [{ id: 'back', label: 'Back' }, { id: 'forward', label: 'Forward' }, ...self.CHOICES_PAGES],
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Page Variable',
+					id: 'pageVariable',
+					default: '1',
+					isVisible: (action) => action.options.page === 'variable',
 				},
 			],
 		},
@@ -483,22 +510,12 @@ instance.prototype.init_actions = function (system) {
 					default: '1',
 					choices: [{ id: 'back', label: 'Back' }, { id: 'forward', label: 'Forward' }, ...self.CHOICES_PAGES],
 				},
-			],
-		},
-		set_page_with_variables: {
-			label: 'Set surface with custom variable to page',
-			options: [
 				{
 					type: 'textwithvariables',
-					label: 'Surface / Controller Serial Number',
-					id: 'controller',
-					default: '',
-				},
-				{
-					type: 'textwithvariables',
-					label: 'Page',
-					id: 'page',
+					label: 'Custom Page Variable',
+					id: 'pageVariable',
 					default: '1',
+					isVisible: (action) => action.options.page === 'variable',
 				},
 			],
 		},
@@ -511,6 +528,14 @@ instance.prototype.init_actions = function (system) {
 					id: 'controller',
 					default: 'self',
 					choices: self.CHOICES_SURFACES,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Surface Variable',
+					tooltip: 'Use surface ID',
+					id: 'controllerVariable',
+					default: '',
+					isVisible: (action) => action.options.controller === 'variable',
 				},
 				{
 					type: 'number',
@@ -534,6 +559,14 @@ instance.prototype.init_actions = function (system) {
 					default: 'self',
 					choices: self.CHOICES_SURFACES,
 				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Surface Variable',
+					tooltip: 'Use surface ID',
+					id: 'controllerVariable',
+					default: '',
+					isVisible: (action) => action.options.controller === 'variable',
+				},
 			],
 		},
 		unlockout_device: {
@@ -545,6 +578,14 @@ instance.prototype.init_actions = function (system) {
 					id: 'controller',
 					default: 'self',
 					choices: self.CHOICES_SURFACES,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Surface Variable',
+					tooltip: 'Use surface ID',
+					id: 'controllerVariable',
+					default: '',
+					isVisible: (action) => action.options.controller === 'variable',
 				},
 			],
 		},
@@ -583,6 +624,14 @@ instance.prototype.init_actions = function (system) {
 					default: 'self',
 					choices: self.CHOICES_SURFACES,
 				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Surface Variable',
+					tooltip: 'Use surface ID',
+					id: 'controllerVariable',
+					default: '',
+					isVisible: (action) => action.options.controller === 'variable',
+				},
 			],
 		},
 		dec_page: {
@@ -594,6 +643,14 @@ instance.prototype.init_actions = function (system) {
 					id: 'controller',
 					default: 'self',
 					choices: self.CHOICES_SURFACES,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Surface Variable',
+					tooltip: 'Use surface ID',
+					id: 'controllerVariable',
+					default: '',
+					isVisible: (action) => action.options.controller === 'variable',
 				},
 			],
 		},
@@ -610,12 +667,26 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_PAGES,
 				},
 				{
+					type: 'textwithvariables',
+					label: 'Custom Page Variable',
+					id: 'pageVariable',
+					default: '1',
+					isVisible: (action) => action.options.page === 'variable',
+				},
+				{
 					type: 'dropdown',
 					label: 'Bank',
 					tooltip: 'Which button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Bank Variable',
+					id: 'bankVariable',
+					default: '1',
+					isVisible: (action) => action.options.bank === 'variable',
 				},
 			],
 		},
@@ -632,12 +703,26 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_PAGES,
 				},
 				{
+					type: 'textwithvariables',
+					label: 'Custom Page Variable',
+					id: 'pageVariable',
+					default: '1',
+					isVisible: (action) => action.options.page === 'variable',
+				},
+				{
 					type: 'dropdown',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Bank Variable',
+					id: 'bankVariable',
+					default: '1',
+					isVisible: (action) => action.options.bank === 'variable',
 				},
 			],
 		},
@@ -654,12 +739,26 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_PAGES,
 				},
 				{
+					type: 'textwithvariables',
+					label: 'Custom Page Variable',
+					id: 'pageVariable',
+					default: '1',
+					isVisible: (action) => action.options.page === 'variable',
+				},
+				{
 					type: 'dropdown',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Bank Variable',
+					id: 'bankVariable',
+					default: '1',
+					isVisible: (action) => action.options.bank === 'variable',
 				},
 			],
 		},
@@ -682,12 +781,26 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_PAGES,
 				},
 				{
+					type: 'textwithvariables',
+					label: 'Custom Page Variable',
+					id: 'pageVariable',
+					default: '1',
+					isVisible: (action) => action.options.page === 'variable',
+				},
+				{
 					type: 'dropdown',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Bank Variable',
+					id: 'bankVariable',
+					default: '1',
+					isVisible: (action) => action.options.bank === 'variable',
 				},
 			],
 		},
@@ -710,12 +823,26 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_PAGES,
 				},
 				{
+					type: 'textwithvariables',
+					label: 'Custom Page Variable',
+					id: 'pageVariable',
+					default: '1',
+					isVisible: (action) => action.options.page === 'variable',
+				},
+				{
 					type: 'dropdown',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Bank Variable',
+					id: 'bankVariable',
+					default: '1',
+					isVisible: (action) => action.options.bank === 'variable',
 				},
 			],
 		},
@@ -738,12 +865,26 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_PAGES,
 				},
 				{
+					type: 'textwithvariables',
+					label: 'Custom Page Variable',
+					id: 'pageVariable',
+					default: '1',
+					isVisible: (action) => action.options.page === 'variable',
+				},
+				{
 					type: 'dropdown',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Bank Variable',
+					id: 'bankVariable',
+					default: '1',
+					isVisible: (action) => action.options.bank === 'variable',
 				},
 			],
 		},
@@ -763,12 +904,26 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_PAGES,
 				},
 				{
+					type: 'textwithvariables',
+					label: 'Custom Page Variable',
+					id: 'pageVariable',
+					default: '1',
+					isVisible: (action) => action.options.page === 'variable',
+				},
+				{
 					type: 'dropdown',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
 					default: '0',
 					choices: self.CHOICES_BANKS,
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Custom Bank Variable',
+					id: 'bankVariable',
+					default: '1',
+					isVisible: (action) => action.options.bank === 'variable',
 				},
 				{
 					type: 'checkbox',
@@ -860,16 +1015,38 @@ instance.prototype.init_actions = function (system) {
 		}
 	}
 
-	self.system.emit('instance_actions', self.id, actions)
+	self.setActions(actions)
+}
+instance.prototype.validateVariables = function (action, type) {
+	let self = this
+	let parsed
+
+	self.system.emit('variable_parse', action.options[`${type}Variable`], (variable) => {
+		let value = variable?.replace(/\s+/g, '') //Remove whitespace commonly appended to variables after autocomplete
+
+		if (type === 'page' && self.CHOICES_PAGES.some((e) => e.id == value)) {
+			parsed = value
+		} else if (type === 'bank' && self.CHOICES_BANKS.some((e) => e.id == value)) {
+			parsed = value
+		} else if (type === 'controller' && self.CHOICES_SURFACES.some((e) => e.id == value)) {
+			parsed = value
+		}
+
+		if (!parsed) {
+			self.log('warn', `Cannot complete action because ${value ? value : 'undefined'} is not a valid ${type}`)
+		}
+	})
+	return parsed
 }
 
 instance.prototype.action = function (action, extras) {
 	let self = this
 	let id = action.action
 	let opt = action.options
-	let thePage = opt.page
-	let theBank = opt.bank
-	let theController = opt.controller
+
+	let thePage = opt.page === 'variable' ? self.validateVariables(action, 'page') : opt.page
+	let theBank = opt.bank === 'variable' ? self.validateVariables(action, 'bank') : opt.bank
+	let theController = opt.controller === 'variable' ? self.validateVariables(action, 'controller') : opt.controller
 
 	if (extras) {
 		if (self.BUTTON_ACTIONS.includes(id)) {
@@ -910,11 +1087,11 @@ instance.prototype.action = function (action, extras) {
 		self.system.emit('custom_variable_set_value', opt.name, value)
 	} else if (id == 'instance_control') {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true')
-	} else if (id == 'set_page') {
+	} else if (id == 'set_page' && theController && thePage) {
 		self.changeControllerPage(theController, thePage)
-	} else if (id == 'set_brightness') {
+	} else if (id == 'set_brightness' && theController) {
 		self.system.emit('device_brightness_set', theController, opt.brightness)
-	} else if (id == 'set_page_byindex') {
+	} else if (id == 'set_page_byindex' && theController && thePage) {
 		if (opt.controller < self.devices.length) {
 			let surface = self.devices[opt.controller].serialnumber
 			self.changeControllerPage(surface, thePage)
@@ -928,18 +1105,7 @@ instance.prototype.action = function (action, extras) {
 					' controller(s) are available.'
 			)
 		}
-	} else if (id == 'set_page_with_variables') {
-		self.system.emit('variable_parse', action.options.controller, (value) => {
-			theController = value.replace(/\s+/g, '')
-		})
-		self.system.emit('variable_parse', action.options.page, (value) => {
-			thePage = value.replace(/\s+/g, '')
-		})
-
-		if (self.CHOICES_SURFACES.some((e) => e.id === theController) && self.CHOICES_PAGES.some((e) => e.id === thePage)) {
-			self.changeControllerPage(theController, thePage)
-		}
-	} else if (id == 'inc_page') {
+	} else if (id == 'inc_page' && theController) {
 		let fromPage = undefined
 		self.system.emit('device_page_get', theController, function (page) {
 			fromPage = page
@@ -949,7 +1115,7 @@ instance.prototype.action = function (action, extras) {
 		if (toPage > 99) toPage = 1
 
 		self.changeControllerPage(theController, toPage, fromPage)
-	} else if (id == 'dec_page') {
+	} else if (id == 'dec_page' && theController) {
 		let fromPage = undefined
 		self.system.emit('device_page_get', theController, function (page) {
 			fromPage = page
@@ -959,7 +1125,7 @@ instance.prototype.action = function (action, extras) {
 		if (toPage < 1) toPage = 99
 
 		self.changeControllerPage(theController, toPage, fromPage)
-	} else if (id == 'lockout_device') {
+	} else if (id == 'lockout_device' && theController) {
 		if (self.userconfig.pin_enable) {
 			// Change page after this runloop
 			if (extras) {
@@ -973,7 +1139,7 @@ instance.prototype.action = function (action, extras) {
 				}
 			})
 		}
-	} else if (id == 'unlockout_device') {
+	} else if (id == 'unlockout_device' && theController) {
 		if (self.userconfig.pin_enable) {
 			// Change page after this runloop
 			if (extras) {
@@ -1007,22 +1173,22 @@ instance.prototype.action = function (action, extras) {
 		}
 	} else if (id == 'panic') {
 		self.system.emit('action_delayed_abort')
-	} else if (id == 'panic_bank') {
+	} else if (id == 'panic_bank' && thePage && theBank) {
 		self.system.emit('action_abort_bank', thePage, theBank, opt.unlatch)
 	} else if (id == 'rescan') {
 		self.system.emit('devices_reenumerate')
-	} else if (id == 'bgcolor') {
+	} else if (id == 'bgcolor' && thePage && theBank) {
 		self.system.emit('bank_changefield', thePage, theBank, 'bgcolor', opt.color)
-	} else if (id == 'textcolor') {
+	} else if (id == 'textcolor' && thePage && theBank) {
 		self.system.emit('bank_changefield', thePage, theBank, 'color', opt.color)
-	} else if (id == 'button_text') {
+	} else if (id == 'button_text' && thePage && theBank) {
 		self.system.emit('bank_changefield', thePage, theBank, 'text', opt.label)
-	} else if (id == 'button_pressrelease') {
+	} else if (id == 'button_pressrelease' && thePage && theBank) {
 		self.system.emit('bank_pressed', thePage, theBank, true, theController)
 		self.system.emit('bank_pressed', thePage, theBank, false, theController)
-	} else if (id == 'button_press') {
+	} else if (id == 'button_press' && thePage && theBank) {
 		self.system.emit('bank_pressed', thePage, theBank, true, theController)
-	} else if (id == 'button_release') {
+	} else if (id == 'button_release' && thePage && theBank) {
 		self.system.emit('bank_pressed', thePage, theBank, false, theController)
 	} else if (id == 'exec') {
 		if (opt.path !== undefined) {
@@ -1250,11 +1416,12 @@ instance.prototype.init_feedback = function () {
 		}
 	})
 
-	self.CHOICES_SURFACES_FEEDBACKS = []
-	self.CHOICES_SURFACES_FEEDBACKS.push({
-		label: 'Any surface',
-		id: 'any',
-	})
+	self.CHOICES_SURFACES_FEEDBACKS = [
+		{
+			label: 'Any surface',
+			id: 'any',
+		},
+	]
 	self.CHOICES_SURFACES.forEach((device) => {
 		if (device.id != 'self') {
 			self.CHOICES_SURFACES_FEEDBACKS.push(device)
@@ -1335,12 +1502,26 @@ instance.prototype.init_feedback = function () {
 				choices: self.CHOICES_PAGES,
 			},
 			{
+				type: 'textwithvariables',
+				label: 'Custom Page Variable',
+				id: 'pageVariable',
+				default: '1',
+				isVisible: (feedback) => feedback.options.page === 'variable',
+			},
+			{
 				type: 'dropdown',
 				label: 'Bank',
 				tooltip: 'Which Button?',
 				id: 'bank',
 				default: '0',
 				choices: self.CHOICES_BANKS,
+			},
+			{
+				type: 'textwithvariables',
+				label: 'Custom Bank Variable',
+				id: 'bankVariable',
+				default: '',
+				isVisible: (feedback) => feedback.options.bank === 'variable',
 			},
 		],
 	}
@@ -1362,12 +1543,26 @@ instance.prototype.init_feedback = function () {
 				choices: self.CHOICES_PAGES,
 			},
 			{
+				type: 'textwithvariables',
+				label: 'Custom Page Variable',
+				id: 'pageVariable',
+				default: '1',
+				isVisible: (feedback) => feedback.options.page === 'variable',
+			},
+			{
 				type: 'dropdown',
 				label: 'Bank',
 				tooltip: 'Which Button?',
 				id: 'bank',
 				default: '0',
 				choices: self.CHOICES_BANKS,
+			},
+			{
+				type: 'textwithvariables',
+				label: 'Custom Bank Variable',
+				id: 'bankVariable',
+				default: '',
+				isVisible: (feedback) => feedback.options.bank === 'variable',
 			},
 		],
 	}
@@ -1476,17 +1671,32 @@ instance.prototype.init_feedback = function () {
 				type: 'dropdown',
 				label: 'Surface',
 				tooltip: 'Which surface do you want to use?',
-				id: 'surface',
+				id: 'controller',
 				default: 'any',
 				choices: self.CHOICES_SURFACES_FEEDBACKS,
 			},
 			{
+				type: 'textwithvariables',
+				label: 'Custom Surface Variable',
+				tooltip: 'Which surface?',
+				id: 'controllerVariable',
+				default: '',
+				isVisible: (feedback) => feedback.options.controller === 'variable',
+			},
+			{
 				type: 'dropdown',
-				label: 'Bank',
+				label: 'Page',
 				tooltip: 'Which page?',
 				id: 'page',
 				default: '0',
 				choices: self.CHOICES_PAGES,
+			},
+			{
+				type: 'textwithvariables',
+				label: 'Custom Page Variable',
+				id: 'pageVariable',
+				default: '1',
+				isVisible: (feedback) => feedback.options.page === 'variable',
 			},
 		],
 	}
@@ -1509,19 +1719,18 @@ function compareValues(op, value, value2) {
 
 instance.prototype.feedback = function (feedback, bank, info) {
 	let self = this
+	let opt = feedback.options
+
+	let thePage = opt.page === 'variable' ? self.validateVariables(feedback, 'page') : opt.page
+	let theBank = opt.bank === 'variable' ? self.validateVariables(feedback, 'bank') : opt.bank
+	let theController = opt.controller === 'variable' ? self.validateVariables(feedback, 'controller') : opt.controller
 
 	if (feedback.type == 'bank_style') {
-		let thePage = feedback.options.page
-		let theBank = feedback.options.bank
-
 		if (info && thePage == '0') thePage = info.page
 		if (info && theBank == '0') theBank = info.bank
 
 		return self.cached_bank_info[`${thePage}_${theBank}`]
 	} else if (feedback.type == 'bank_pushed') {
-		let thePage = feedback.options.page
-		let theBank = feedback.options.bank
-
 		if (info && thePage == '0') thePage = info.page
 		if (info && theBank == '0') theBank = info.bank
 
@@ -1606,12 +1815,11 @@ instance.prototype.feedback = function (feedback, bank, info) {
 				bgcolor: feedback.options.disabled_bg,
 			}
 		}
-	} else if (feedback.type == 'surface_on_page') {
-		let surface = feedback.options.surface
-		let targetPage = info && feedback.options.page == '0' ? info.page : feedback.options.page
+	} else if (feedback.type == 'surface_on_page' && theController) {
+		let targetPage = info && thePage == '0' ? info.page : thePage
 		let matchedPage = false
 
-		if (surface == 'any') {
+		if (theController == 'any') {
 			let activePages = []
 			self.CHOICES_SURFACES.forEach((device) => {
 				if (device.id != 'self') {
@@ -1622,7 +1830,7 @@ instance.prototype.feedback = function (feedback, bank, info) {
 			})
 			matchedPage = activePages.includes(targetPage)
 		} else {
-			self.system.emit('device_page_get', surface, function (page) {
+			self.system.emit('device_page_get', theController, function (page) {
 				matchedPage = targetPage == page
 			})
 		}
