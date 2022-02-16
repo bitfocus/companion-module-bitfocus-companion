@@ -3,7 +3,7 @@ const os = require('os')
 const exec = require('child_process').exec
 const GetUpgradeScripts = require('./upgrades')
 const _ = require('underscore')
-const jp = require('jsonpath');
+const jp = require('jsonpath')
 
 function instance(system, id, config) {
 	let self = this
@@ -241,7 +241,7 @@ instance.prototype.bank_invalidate = function (page, bank) {
 		// ffigure out the new combined style
 		const newStyle = {
 			...JSON.parse(JSON.stringify(self.raw_banks[page][bank])),
-			...style
+			...style,
 		}
 
 		// check if there was a change
@@ -249,7 +249,6 @@ instance.prototype.bank_invalidate = function (page, bank) {
 			self.cached_bank_info[cacheId] = newStyle
 			self.checkFeedbacks('bank_style')
 		}
-
 	})
 
 	// Check if the text has changed
@@ -427,7 +426,7 @@ instance.prototype.init_actions = function (system) {
 			label: id,
 		})),
 	}
-	self.FIELD_JSON_DATA_VARIABLE.choices.unshift({id:'', label:'<NONE>'})
+	self.FIELD_JSON_DATA_VARIABLE.choices.unshift({ id: '', label: '<NONE>' })
 
 	self.FIELD_JSON_PATH = {
 		type: 'textwithvariables',
@@ -446,7 +445,7 @@ instance.prototype.init_actions = function (system) {
 			label: id,
 		})),
 	}
-	self.FIELD_TARGET_VARIABLE.choices.unshift({id:'', label:'<NONE>'})	
+	self.FIELD_TARGET_VARIABLE.choices.unshift({ id: '', label: '<NONE>' })
 
 	actions = {
 		instance_control: {
@@ -911,9 +910,8 @@ instance.prototype.action = function (action, extras) {
 		self.userconfig = userconfig
 	})
 
-	// extract value from the stored json response data, assign to target variable	
+	// extract value from the stored json response data, assign to target variable
 	if (id === 'custom_variable_set_via_jsonpath') {
-
 		// get the json response data from the custom variable that holds the data
 		let jsonResultData = ''
 		let variableName = `custom_${action.options.jsonResultDataVariable}`
@@ -928,7 +926,6 @@ instance.prototype.action = function (action, extras) {
 			objJson = JSON.parse(jsonResultData)
 		} catch (e) {
 			self.log('error', `HTTP ${id.toUpperCase()} Cannot create JSON object, malformed JSON data (${e.message})`)
-			self.status(self.STATUS_ERROR, e.message)
 			return
 		}
 
@@ -938,15 +935,13 @@ instance.prototype.action = function (action, extras) {
 			valueToSet = jp.query(objJson, action.options.jsonPath)
 		} catch (error) {
 			self.log('error', `HTTP ${id.toUpperCase()} Cannot extract JSON value (${e.message})`)
-			self.status(self.STATUS_ERROR, error.message)
 			return
 		}
 
 		self.system.emit('custom_variable_set_value', action.options.targetVariable, valueToSet)
 
-		self.status(self.STATUS_OK)
 		return
-	}		
+	}
 
 	if (id == 'custom_variable_set_value') {
 		self.system.emit('custom_variable_set_value', opt.name, opt.value)
@@ -1066,8 +1061,8 @@ instance.prototype.action = function (action, extras) {
 		if (opt.path !== undefined) {
 			let path = opt.path
 			self.parseVariables(path, function (value) {
-				path = value;
-			});
+				path = value
+			})
 			self.debug("Running path: '" + path + "'")
 			exec(
 				path,
@@ -1517,7 +1512,7 @@ instance.prototype.feedback = function (feedback, bank, info) {
 		if (info && thePage == '0') thePage = info.page
 		if (info && theBank == '0') theBank = info.bank
 
-		return self.cached_bank_info[`${thePage}_${theBank}`]  
+		return self.cached_bank_info[`${thePage}_${theBank}`]
 	} else if (feedback.type == 'bank_pushed') {
 		let thePage = feedback.options.page
 		let theBank = feedback.options.bank
