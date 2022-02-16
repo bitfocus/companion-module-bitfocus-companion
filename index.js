@@ -3,6 +3,7 @@ const os = require('os')
 const exec = require('child_process').exec
 const GetUpgradeScripts = require('./upgrades')
 const _ = require('underscore')
+const jp = require('jsonpath');
 
 function instance(system, id, config) {
 	let self = this
@@ -416,6 +417,37 @@ instance.prototype.init_actions = function (system) {
 		})
 	}
 
+	self.FIELD_JSON_DATA_VARIABLE = {
+		type: 'dropdown',
+		label: 'JSON Result Data Variable',
+		id: 'jsonResultDataVariable',
+		default: '',
+		choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+			id: id,
+			label: id,
+		})),
+	}
+	self.FIELD_JSON_DATA_VARIABLE.choices.unshift({id:'', label:'<NONE>'})
+
+	self.FIELD_JSON_PATH = {
+		type: 'textwithvariables',
+		label: 'Path (like $.age)',
+		id: 'jsonPath',
+		default: '',
+	}
+
+	self.FIELD_TARGET_VARIABLE = {
+		type: 'dropdown',
+		label: 'Target Variable',
+		id: 'targetVariable',
+		default: '',
+		choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+			id: id,
+			label: id,
+		})),
+	}
+	self.FIELD_TARGET_VARIABLE.choices.unshift({id:'', label:'<NONE>'})	
+
 	actions = {
 		instance_control: {
 			label: 'Enable or disable instance',
@@ -827,6 +859,10 @@ instance.prototype.init_actions = function (system) {
 				},
 			],
 		},
+		custom_variable_set_via_jsonpath: {
+			label: 'Set custom variable from a stored JSONresult via a JSONpath expression',
+			options: [self.FIELD_JSON_DATA_VARIABLE, self.FIELD_JSON_PATH, self.FIELD_TARGET_VARIABLE],
+		},
 	}
 
 	if (self.system.listenerCount('restart') > 0) {
@@ -874,6 +910,43 @@ instance.prototype.action = function (action, extras) {
 	self.system.emit('get_userconfig', function (userconfig) {
 		self.userconfig = userconfig
 	})
+
+	// extract value from the stored json response data, assign to target variable	
+	if (id === 'custom_variable_set_via_jsonpath') {
+
+		// get the json response data from the custom variable that holds the data
+		let jsonResultData = ''
+		let variableName = `custom_${action.options.jsonResultDataVariable}`
+		self.system.emit('variable_get', 'internal', variableName, (value) => {
+			jsonResultData = value
+			self.debug('jsonResultData', jsonResultData)
+		})
+
+		// recreate a json object from stored json result data string
+		let objJson = ''
+		try {
+			objJson = JSON.parse(jsonResultData)
+		} catch (e) {
+			self.log('error', `HTTP ${id.toUpperCase()} Cannot create JSON object, malformed JSON data (${e.message})`)
+			self.status(self.STATUS_ERROR, e.message)
+			return
+		}
+
+		// extract the value via the given standard JSONPath expression
+		let valueToSet = ''
+		try {
+			valueToSet = jp.query(objJson, action.options.jsonPath)
+		} catch (error) {
+			self.log('error', `HTTP ${id.toUpperCase()} Cannot extract JSON value (${e.message})`)
+			self.status(self.STATUS_ERROR, error.message)
+			return
+		}
+
+		self.system.emit('custom_variable_set_value', action.options.targetVariable, valueToSet)
+
+		self.status(self.STATUS_OK)
+		return
+	}		
 
 	if (id == 'custom_variable_set_value') {
 		self.system.emit('custom_variable_set_value', opt.name, opt.value)
