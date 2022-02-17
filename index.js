@@ -26,8 +26,7 @@ function instance(system, id, config) {
 			instance_oks: self.instance_oks,
 		})
 
-		self.checkFeedbacks('instance_status')
-		self.checkFeedbacks('instance_custom_state')
+		self.checkFeedbacks('instance_status', 'instance_custom_state')
 	})
 
 	self.time_interval = setInterval(function () {
@@ -111,7 +110,7 @@ instance.prototype.init = function () {
 
 	self.addSystemCallback('graphics_indicate_push', self.bank_indicate_push.bind(self))
 
-	self.addSystemCallback('bank_pressed', self.bank_pressed.bind(self))
+	self.addSystemCallback('db_set', self.db_set.bind(self))
 
 	self.instance_save()
 	self.addSystemCallback('instance_save', self.instance_save.bind(self))
@@ -270,7 +269,7 @@ instance.prototype.bank_indicate_push = function (page, bank, state) {
 	self.checkFeedbacks('bank_pushed')
 }
 
-instance.prototype.bank_pressed = function (page, bank, state) {
+instance.prototype.db_set = function () {
 	let self = this
 
 	self.checkFeedbacks('surface_on_page')
@@ -281,6 +280,8 @@ instance.prototype.devices_list = function (list) {
 
 	self.devices = list
 	self.init_actions()
+	self.init_feedback()
+	self.checkFeedbacks('surface_on_page')
 }
 
 instance.prototype.devices_getall = function () {
