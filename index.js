@@ -202,8 +202,6 @@ instance.prototype.custom_variable_list_update = function (data) {
 	}
 
 	self.update_variables()
-
-	self.init_actions()
 }
 
 instance.prototype.check_var_recursion = function (v, realText) {
@@ -417,16 +415,10 @@ instance.prototype.init_actions = function (system) {
 	}
 
 	self.FIELD_JSON_DATA_VARIABLE = {
-		type: 'dropdown',
+		type: 'custom-variable',
 		label: 'JSON Result Data Variable',
 		id: 'jsonResultDataVariable',
-		default: '',
-		choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-			id: id,
-			label: id,
-		})),
 	}
-	self.FIELD_JSON_DATA_VARIABLE.choices.unshift({ id: '', label: '<NONE>' })
 
 	self.FIELD_JSON_PATH = {
 		type: 'textwithvariables',
@@ -436,16 +428,10 @@ instance.prototype.init_actions = function (system) {
 	}
 
 	self.FIELD_TARGET_VARIABLE = {
-		type: 'dropdown',
+		type: 'custom-variable',
 		label: 'Target Variable',
 		id: 'targetVariable',
-		default: '',
-		choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-			id: id,
-			label: id,
-		})),
 	}
-	self.FIELD_TARGET_VARIABLE.choices.unshift({ id: '', label: '<NONE>' })
 
 	actions = {
 		instance_control: {
@@ -797,14 +783,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Set custom variable value',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'custom-variable',
 					label: 'Custom variable',
 					id: 'name',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 				{
 					type: 'textinput',
@@ -818,14 +799,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Set custom variable expression',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'custom-variable',
 					label: 'Custom variable',
 					id: 'name',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 				{
 					type: 'textwithvariables',
@@ -839,14 +815,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Store variable value to custom variable',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'custom-variable',
 					label: 'Custom variable',
 					id: 'name',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 				{
 					type: 'dropdown',
@@ -914,8 +885,7 @@ instance.prototype.action = function (action, extras) {
 	if (id === 'custom_variable_set_via_jsonpath') {
 		// get the json response data from the custom variable that holds the data
 		let jsonResultData = ''
-		let variableName = `custom_${action.options.jsonResultDataVariable}`
-		self.system.emit('variable_get', 'internal', variableName, (value) => {
+		self.getCustomVariableValue(action.options.jsonResultDataVariable, (value) => {
 			jsonResultData = value
 			self.debug('jsonResultData', jsonResultData)
 		})
@@ -938,20 +908,20 @@ instance.prototype.action = function (action, extras) {
 			return
 		}
 
-		self.system.emit('custom_variable_set_value', action.options.targetVariable, valueToSet)
+		self.setCustomVariableValue(action.options.targetVariable, valueToSet)
 
 		return
 	}
 
 	if (id == 'custom_variable_set_value') {
-		self.system.emit('custom_variable_set_value', opt.name, opt.value)
+		self.setCustomVariableValue(opt.name, opt.value)
 	} else if (id === 'custom_variable_set_expression') {
 		self.system.emit('custom_variable_set_expression', opt.name, opt.expression)
 	} else if (id == 'custom_variable_store_variable') {
 		let value = ''
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
-		self.system.emit('custom_variable_set_value', opt.name, value)
+		self.setCustomVariableValue(opt.name, value)
 	} else if (id == 'instance_control') {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true')
 	} else if (id == 'set_page') {
