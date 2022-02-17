@@ -446,6 +446,51 @@ instance.prototype.init_actions = function (system) {
 	}
 	self.FIELD_TARGET_VARIABLE.choices.unshift({ id: '', label: '<NONE>' })
 
+	self.FIELD_PAGE = {
+		type: 'dropdown',
+		label: 'Page',
+		id: 'page',
+		default: '1',
+		choices: [{ id: 'back', label: 'Back' }, { id: 'forward', label: 'Forward' }, ...self.CHOICES_PAGES],
+	}
+
+	self.FIELD_PAGE_BUTTON = {
+		type: 'dropdown',
+		label: 'Page',
+		tooltip: 'What page is the button on?',
+		id: 'page',
+		default: '0',
+		choices: self.CHOICES_PAGES,		
+	}
+
+	self.FIELD_BANK_BUTTON = {
+		type: 'dropdown',
+		label: 'Bank',
+		tooltip: 'Which Button?',
+		id: 'bank',
+		default: '0',
+		choices: self.CHOICES_BANKS,
+	}	
+
+	self.FIELD_CONTROLLER = {
+		type: 'dropdown',
+		label: 'Surface / controller',
+		id: 'controller',
+		default: 'self',
+		choices: self.CHOICES_SURFACES,
+	}
+
+	self.FIELD_CUSTOM_VARIABLE = {
+		type: 'dropdown',
+		label: 'Custom variable',
+		id: 'name',
+		default: Object.keys(self.custom_variables)[0],
+		choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+			id: id,
+			label: id,
+		})),
+	}
+
 	actions = {
 		instance_control: {
 			label: 'Enable or disable instance',
@@ -469,20 +514,8 @@ instance.prototype.init_actions = function (system) {
 		set_page: {
 			label: 'Set surface with s/n to page',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Surface / controller',
-					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
-				},
-				{
-					type: 'dropdown',
-					label: 'Page',
-					id: 'page',
-					default: '1',
-					choices: [{ id: 'back', label: 'Back' }, { id: 'forward', label: 'Forward' }, ...self.CHOICES_PAGES],
-				},
+				self.FIELD_CONTROLLER,
+				self.FIELD_PAGE,
 			],
 		},
 		set_page_byindex: {
@@ -499,25 +532,13 @@ instance.prototype.init_actions = function (system) {
 					required: true,
 					range: false,
 				},
-				{
-					type: 'dropdown',
-					label: 'Page',
-					id: 'page',
-					default: '1',
-					choices: [{ id: 'back', label: 'Back' }, { id: 'forward', label: 'Forward' }, ...self.CHOICES_PAGES],
-				},
+				self.FIELD_PAGE,
 			],
 		},
 		set_brightness: {
 			label: 'Set surface with s/n brightness',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Surface / controller',
-					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
-				},
+				self.FIELD_CONTROLLER,
 				{
 					type: 'number',
 					label: 'Brightness',
@@ -533,25 +554,13 @@ instance.prototype.init_actions = function (system) {
 		lockout_device: {
 			label: 'Trigger a device to lockout immediately.',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Surface / controller',
-					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
-				},
+				self.FIELD_CONTROLLER,
 			],
 		},
 		unlockout_device: {
 			label: 'Trigger a device to unlock immediately.',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Surface / controller',
-					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
-				},
+				self.FIELD_CONTROLLER,
 			],
 		},
 		exec: {
@@ -582,91 +591,37 @@ instance.prototype.init_actions = function (system) {
 		inc_page: {
 			label: 'Increment page number',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Surface / controller',
-					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
-				},
+				self.FIELD_CONTROLLER,
 			],
 		},
 		dec_page: {
 			label: 'Decrement page number',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Surface / controller',
-					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
-				},
+				self.FIELD_CONTROLLER,
 			],
 		},
 
 		button_pressrelease: {
 			label: 'Button press and release',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Page',
-					tooltip: 'What page is the button on?',
-					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
-				},
-				{
-					type: 'dropdown',
-					label: 'Bank',
-					tooltip: 'Which button?',
-					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
-				},
+				self.FIELD_PAGE_BUTTON,
+				self.FIELD_BANK_BUTTON,
 			],
 		},
 
 		button_press: {
 			label: 'Button Press',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Page',
-					tooltip: 'What page is the button on?',
-					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
-				},
-				{
-					type: 'dropdown',
-					label: 'Bank',
-					tooltip: 'Which Button?',
-					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
-				},
+				self.FIELD_PAGE_BUTTON,
+				self.FIELD_BANK_BUTTON,
 			],
 		},
 
 		button_release: {
 			label: 'Button Release',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Page',
-					tooltip: 'What page is the button on?',
-					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
-				},
-				{
-					type: 'dropdown',
-					label: 'Bank',
-					tooltip: 'Which Button?',
-					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
-				},
+				self.FIELD_PAGE_BUTTON,
+				self.FIELD_BANK_BUTTON,
 			],
 		},
 
@@ -679,22 +634,8 @@ instance.prototype.init_actions = function (system) {
 					id: 'label',
 					default: '',
 				},
-				{
-					type: 'dropdown',
-					label: 'Page',
-					tooltip: 'What page is the button on?',
-					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
-				},
-				{
-					type: 'dropdown',
-					label: 'Bank',
-					tooltip: 'Which Button?',
-					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
-				},
+				self.FIELD_PAGE_BUTTON,
+				self.FIELD_BANK_BUTTON,
 			],
 		},
 
@@ -707,22 +648,8 @@ instance.prototype.init_actions = function (system) {
 					id: 'color',
 					default: '0',
 				},
-				{
-					type: 'dropdown',
-					label: 'Page',
-					tooltip: 'What page is the button on?',
-					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
-				},
-				{
-					type: 'dropdown',
-					label: 'Bank',
-					tooltip: 'Which Button?',
-					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
-				},
+				self.FIELD_PAGE_BUTTON,
+				self.FIELD_BANK_BUTTON,
 			],
 		},
 
@@ -735,22 +662,8 @@ instance.prototype.init_actions = function (system) {
 					id: 'color',
 					default: '0',
 				},
-				{
-					type: 'dropdown',
-					label: 'Page',
-					tooltip: 'What page is the button on?',
-					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
-				},
-				{
-					type: 'dropdown',
-					label: 'Bank',
-					tooltip: 'Which Button?',
-					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
-				},
+				self.FIELD_PAGE_BUTTON,
+				self.FIELD_BANK_BUTTON,
 			],
 		},
 		rescan: {
@@ -760,22 +673,8 @@ instance.prototype.init_actions = function (system) {
 		panic_bank: {
 			label: 'Abort actions on button',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Page',
-					tooltip: 'What page is the button on?',
-					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
-				},
-				{
-					type: 'dropdown',
-					label: 'Bank',
-					tooltip: 'Which Button?',
-					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
-				},
+				self.FIELD_PAGE_BUTTON,
+				self.FIELD_BANK_BUTTON,
 				{
 					type: 'checkbox',
 					label: 'Unlatch?',
@@ -795,16 +694,7 @@ instance.prototype.init_actions = function (system) {
 		custom_variable_set_value: {
 			label: 'CustomVariable set Value',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Custom variable',
-					id: 'name',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
-				},
+				self.FIELD_CUSTOM_VARIABLE,
 				{
 					type: 'textinput',
 					label: 'Value',
@@ -816,16 +706,7 @@ instance.prototype.init_actions = function (system) {
 		custom_variable_set_expression: {
 			label: 'CustomVariable set Expression',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Custom variable',
-					id: 'name',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
-				},
+				self.FIELD_CUSTOM_VARIABLE,
 				{
 					type: 'textwithvariables',
 					label: 'Expression',
@@ -837,16 +718,7 @@ instance.prototype.init_actions = function (system) {
 		custom_variable_store_variable: {
 			label: 'CustomVariable set InternalVariable',
 			options: [
-				{
-					type: 'dropdown',
-					label: 'Custom variable',
-					id: 'name',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
-				},
+				self.FIELD_CUSTOM_VARIABLE,
 				{
 					type: 'dropdown',
 					id: 'variable',
@@ -1313,22 +1185,8 @@ instance.prototype.init_feedback = function () {
 		label: 'Use another buttons style',
 		description: 'Imitate the style of another button',
 		options: [
-			{
-				type: 'dropdown',
-				label: 'Page',
-				tooltip: 'What page is the button on?',
-				id: 'page',
-				default: '0',
-				choices: self.CHOICES_PAGES,
-			},
-			{
-				type: 'dropdown',
-				label: 'Bank',
-				tooltip: 'Which Button?',
-				id: 'bank',
-				default: '0',
-				choices: self.CHOICES_BANKS,
-			},
+			self.FIELD_PAGE_BUTTON,
+			self.FIELD_BANK_BUTTON,
 		],
 	}
 	feedbacks['bank_pushed'] = {
@@ -1340,22 +1198,8 @@ instance.prototype.init_feedback = function () {
 			bgcolor: self.rgb(255, 0, 0),
 		},
 		options: [
-			{
-				type: 'dropdown',
-				label: 'Page',
-				tooltip: 'What page is the button on?',
-				id: 'page',
-				default: '0',
-				choices: self.CHOICES_PAGES,
-			},
-			{
-				type: 'dropdown',
-				label: 'Bank',
-				tooltip: 'Which Button?',
-				id: 'bank',
-				default: '0',
-				choices: self.CHOICES_BANKS,
-			},
+			self.FIELD_PAGE_BUTTON,
+			self.FIELD_BANK_BUTTON,
 		],
 	}
 	feedbacks['variable_value'] = {
