@@ -3,7 +3,6 @@ const os = require('os')
 const exec = require('child_process').exec
 const GetUpgradeScripts = require('./upgrades')
 const _ = require('underscore')
-const jp = require('jsonpath')
 
 function instance(system, id, config) {
 	let self = this
@@ -910,48 +909,14 @@ instance.prototype.action = function (action, extras) {
 		self.userconfig = userconfig
 	})
 
-	// extract value from the stored json response data, assign to target variable
-	if (id === 'custom_variable_set_via_jsonpath') {
-		// get the json response data from the custom variable that holds the data
-		let jsonResultData = ''
-		let variableName = `custom_${action.options.jsonResultDataVariable}`
-		self.system.emit('variable_get', 'internal', variableName, (value) => {
-			jsonResultData = value
-			self.debug('jsonResultData', jsonResultData)
-		})
-
-		// recreate a json object from stored json result data string
-		let objJson = ''
-		try {
-			objJson = JSON.parse(jsonResultData)
-		} catch (e) {
-			self.log('error', `HTTP ${id.toUpperCase()} Cannot create JSON object, malformed JSON data (${e.message})`)
-			return
-		}
-
-		// extract the value via the given standard JSONPath expression
-		let valueToSet = ''
-		try {
-			valueToSet = jp.query(objJson, action.options.jsonPath)
-		} catch (error) {
-			self.log('error', `HTTP ${id.toUpperCase()} Cannot extract JSON value (${e.message})`)
-			return
-		}
-
-		self.system.emit('custom_variable_set_value', action.options.targetVariable, valueToSet)
-
-		return
-	}
-
 	if (id == 'custom_variable_set_value') {
 		self.system.emit('custom_variable_set_value', opt.name, opt.value)
 	} else if (id === 'custom_variable_set_expression') {
 		self.system.emit('custom_variable_set_expression', opt.name, opt.expression)
 	} else if (id == 'custom_variable_store_variable') {
-		let value = ''
-		const id = opt.variable.split(':')
-		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
-		self.system.emit('custom_variable_set_value', opt.name, value)
+		self.system.emit('custom_variable_store_variable', opt.name, opt.variable)
+	} else if (id === 'custom_variable_set_via_jsonpath') {
+		self.system.emit('custom_variable_set_via_jsonpath', opt.targetVariable, opt.jsonResultDataVariable, opt.jsonPath)		
 	} else if (id == 'instance_control') {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true')
 	} else if (id == 'set_page') {
