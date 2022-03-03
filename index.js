@@ -436,7 +436,7 @@ instance.prototype.init_actions = function (system) {
 
 	self.FIELD_TARGET_VARIABLE = {
 		type: 'dropdown',
-		label: 'Target Variable',
+		label: 'Custom variable',
 		id: 'targetVariable',
 		default: '',
 		choices: Object.entries(self.custom_variables).map(([id, info]) => ({
@@ -793,7 +793,7 @@ instance.prototype.init_actions = function (system) {
 			label: 'Kill companion',
 		},
 		custom_variable_set_value: {
-			label: 'Set custom variable value',
+			label: 'CustomVariable set Value',
 			options: [
 				{
 					type: 'dropdown',
@@ -814,7 +814,7 @@ instance.prototype.init_actions = function (system) {
 			],
 		},
 		custom_variable_set_expression: {
-			label: 'Set custom variable expression',
+			label: 'CustomVariable set Expression',
 			options: [
 				{
 					type: 'dropdown',
@@ -835,7 +835,7 @@ instance.prototype.init_actions = function (system) {
 			],
 		},
 		custom_variable_store_variable: {
-			label: 'Store variable value to custom variable',
+			label: 'CustomVariable set InternalVariable',
 			options: [
 				{
 					type: 'dropdown',
@@ -858,8 +858,8 @@ instance.prototype.init_actions = function (system) {
 			],
 		},
 		custom_variable_set_via_jsonpath: {
-			label: 'Set custom variable from a stored JSONresult via a JSONpath expression',
-			options: [self.FIELD_JSON_DATA_VARIABLE, self.FIELD_JSON_PATH, self.FIELD_TARGET_VARIABLE],
+			label: 'CustomVariable set JSONresult via JSONpath Expression',
+			options: [self.FIELD_TARGET_VARIABLE, self.FIELD_JSON_DATA_VARIABLE, self.FIELD_JSON_PATH],
 		},
 	}
 
