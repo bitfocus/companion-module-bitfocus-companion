@@ -782,13 +782,13 @@ instance.prototype.action = function (action, extras) {
 	})
 
 	if (id == 'custom_variable_set_value') {
-		self.system.emit('custom_variable_set_value', opt.name, opt.value)
+		self.custom_variable_set_value(opt.name, opt.value)
 	} else if (id === 'custom_variable_set_expression') {
-		self.system.emit('custom_variable_set_expression', opt.name, opt.expression)
+		self.custom_variable_set_expression(opt.name, opt.expression)
 	} else if (id == 'custom_variable_store_variable') {
-		self.system.emit('custom_variable_store_variable', opt.name, opt.variable)
+		self.custom_variable_store_variable(opt.name, opt.variable)
 	} else if (id === 'custom_variable_set_via_jsonpath') {
-		self.system.emit('custom_variable_set_via_jsonpath', opt.targetVariable, opt.jsonResultDataVariable, opt.jsonPath)		
+		self.custom_variable_set_via_jsonpath(opt.targetVariable, opt.jsonResultDataVariable, opt.jsonPath)		
 	} else if (id == 'instance_control') {
 		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true')
 	} else if (id == 'set_page') {
