@@ -69,6 +69,7 @@ instance.prototype.init = function () {
 	self.cached_bank_info = {}
 	self.pageHistory = {}
 	self.custom_variables = {}
+	self.triggers = []
 
 	self.feedback_variable_subscriptions = {}
 
@@ -124,6 +125,9 @@ instance.prototype.init = function () {
 
 	self.subscribeFeedbacks('variable_value')
 	self.subscribeFeedbacks('variable_variable')
+
+	self.addSystemCallback('schedule_refresh', self.triggers_update.bind(self))
+	self.triggers_update()
 
 	self.status(self.STATE_OK)
 }
@@ -204,6 +208,23 @@ instance.prototype.custom_variable_list_update = function (data) {
 	self.update_variables()
 
 	self.init_actions()
+}
+
+instance.prototype.triggers_update = function (data) {
+	const self = this
+
+	if (data) {
+		self.triggers = data
+	} else {
+		self.system.emit('schedule_get', (d) => {
+			self.triggers = d
+		})
+	}
+
+	self.init_actions()
+	self.init_feedback()
+
+	self.checkFeedbacks('trigger_enabled')
 }
 
 instance.prototype.check_var_recursion = function (v, realText) {
@@ -862,6 +883,32 @@ instance.prototype.init_actions = function (system) {
 			label: 'Set custom variable from a stored JSONresult via a JSONpath expression',
 			options: [self.FIELD_JSON_DATA_VARIABLE, self.FIELD_JSON_PATH, self.FIELD_TARGET_VARIABLE],
 		},
+		trigger_enabled: {
+			label: 'Enable or disable trigger',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Trigger',
+					id: 'trigger_id',
+					default: self.triggers[0] && self.triggers[0].id,
+					choices: self.triggers.map((info) => ({
+						id: info.id,
+						label: info.title || info.id,
+					})),
+				},
+				{
+					type: 'dropdown',
+					label: 'Enable',
+					id: 'enable',
+					default: 'true',
+					choices: [
+						{ id: 'toggle', label: 'Toggle' },
+						{ id: 'true', label: 'Yes' },
+						{ id: 'false', label: 'No' },
+					],
+				},
+			],
+		},
 	}
 
 	if (self.system.listenerCount('restart') > 0) {
@@ -1081,6 +1128,14 @@ instance.prototype.action = function (action, extras) {
 		self.system.emit('exit')
 	} else if (id == 'app_restart') {
 		self.system.emit('restart')
+	} else if (id == 'trigger_enabled') {
+		const trigger = self.triggers.find((x) => x.id === opt.trigger_id)
+		if (!trigger) return false
+
+		let newState = opt.enable == 'true'
+		if (opt.enable == 'toggle') newState = !!trigger.disabled
+
+		self.system.emit('schedule_set_enabled', opt.trigger_id, newState)
 	}
 }
 
@@ -1485,6 +1540,33 @@ instance.prototype.init_feedback = function () {
 			delete self.feedback_variable_subscriptions[fb.id]
 		},
 	}
+	feedbacks['trigger_enabled'] = {
+		type: 'boolean',
+		label: 'Check if trigger is enabled or disabled',
+		style: {
+			color: self.rgb(255, 255, 255),
+			bgcolor: self.rgb(255, 0, 0),
+		},
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Trigger',
+				id: 'trigger_id',
+				default: self.triggers[0] && self.triggers[0].id,
+				choices: self.triggers.map((info) => ({
+					id: info.id,
+					label: info.title || info.id,
+				})),
+			},
+			{
+				type: 'dropdown',
+				label: 'Enable',
+				id: 'enable',
+				default: 'true',
+				choices: self.CHOICES_YESNO_BOOLEAN,
+			},
+		],
+	}
 
 	self.setFeedbackDefinitions(feedbacks)
 }
@@ -1601,6 +1683,13 @@ instance.prototype.feedback = function (feedback, bank, info) {
 				bgcolor: feedback.options.disabled_bg,
 			}
 		}
+	} else if (feedback.type == 'trigger_enabled') {
+		const trigger = self.triggers.find((x) => x.id === feedback.options.trigger_id)
+		if (!trigger) return false
+
+		const state = !trigger.disabled
+		const target = feedback.options.enable == 'true'
+		return state == target
 	}
 }
 
