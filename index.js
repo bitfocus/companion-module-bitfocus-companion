@@ -470,11 +470,11 @@ instance.prototype.init_actions = function (system) {
 
 	actions = {
 		instance_control: {
-			label: 'Enable or disable instance',
+			label: 'Enable or disable connection',
 			options: [
 				{
 					type: 'dropdown',
-					label: 'Instance',
+					label: 'Connection',
 					id: 'instance_id',
 					default: self.CHOICES_INSTANCES.length > 0 ? self.CHOICES_INSTANCES[0].id : undefined,
 					choices: self.CHOICES_INSTANCES,
@@ -1332,19 +1332,20 @@ instance.prototype.init_feedback = function () {
 	Object.entries(self.instances).forEach((entry) => {
 		const [key, value] = entry
 		if (value.label == 'internal') {
-			instance_choices.push({ id: 'all', label: 'All Instances' })
+			instance_choices.push({ id: 'all', label: 'All Connections' })
 		} else {
 			instance_choices.push({ id: key, label: value.label })
 		}
 	})
 
 	feedbacks['instance_status'] = {
-		label: 'Companion Instance Status',
-		description: 'Change button color on Instance Status\nDisabled color is not used when "All" instances is selected',
+		label: 'Companion Connection Status',
+		description:
+			'Change button color on Connection Status\nDisabled color is not used when "All" connections is selected',
 		options: [
 			{
 				type: 'dropdown',
-				label: 'Instance or All',
+				label: 'Connection or All',
 				id: 'instance_id',
 				choices: instance_choices,
 				default: 'all',
