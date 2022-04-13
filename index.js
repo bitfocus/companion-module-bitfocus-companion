@@ -648,6 +648,53 @@ instance.prototype.init_actions = function (system) {
 			],
 		},
 
+		button_pressrelease_condition: {
+			label: 'Button press and release if Variable meets Condition',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'variable',
+					label: 'Variable to check',
+					default: 'internal:time_hms',
+					choices: self.CHOICES_VARIABLES
+				},
+				{
+					type: 'dropdown',
+					label: 'Operation',
+					id: 'op',
+					default: 'eq',
+					choices: [
+						{ id: 'eq', label: '=' },
+						{ id: 'ne', label: '!=' },
+						{ id: 'gt', label: '>' },
+						{ id: 'lt', label: '<' },
+					],
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Value',
+					id: 'value',
+					default: '',
+				},
+				{
+					type: 'dropdown',
+					label: 'Page',
+					tooltip: 'What page is the button on?',
+					id: 'page',
+					default: '0',
+					choices: self.CHOICES_PAGES
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank',
+					tooltip: 'Which button?',
+					id: 'bank',
+					default: '0',
+					choices: self.CHOICES_BANKS
+				},
+			],
+		},
+
 		button_press: {
 			label: 'Button Press',
 			options: [
@@ -835,6 +882,169 @@ instance.prototype.init_actions = function (system) {
 				},
 			],
 		},
+		custom_variable_math_operation: {
+			label: 'Modify Variable Value with Math Operation',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Variable',
+					id: 'variable',
+					choices: self.CHOICES_VARIABLES
+				},
+				{
+					type: 'dropdown',
+					label: 'Operation',
+					id: 'operation',
+					default: 'plus',
+					choices: [
+						{ id: 'plus', label: 'Variable Plus Value'},
+						{ id: 'minus', label: 'Variable Minus Value'},
+						{ id: 'minus_opposite', label: 'Value Minus Variable'},
+						{ id: 'multiply', label: 'Variable Multiplied By Value'},
+						{ id: 'divide', label: 'Variable Divided By Value'},
+						{ id: 'divide_opposite', label: 'Value Divided By Variable'}
+					]
+				},
+				{
+					type: 'textinput',
+					label: 'Value',
+					id: 'value',
+					default: '',
+				},
+				{
+					type: 'dropdown',
+					label: 'Resulting Variable',
+					id: 'result',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				},
+			],
+		},
+		custom_variable_math_int_operation: {
+			label: 'Modify Variable Value with Math Convert To Int Operation',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Variable',
+					id: 'variable',
+					choices: self.CHOICES_VARIABLES
+				},
+				{
+					type: 'number',
+					label: 'Radix',
+					id: 'radix',
+					default: 10,
+					min: 2,
+					max: 36,
+					step: 1,
+					range: true
+				},
+				{
+					type: 'dropdown',
+					label: 'Resulting Variable',
+					id: 'result',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				},
+			],
+		},
+		custom_variable_string_trim_operation: {
+			label: 'Modify Variable Value with String Trim Operation',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Variable',
+					id: 'variable',
+					choices: self.CHOICES_VARIABLES
+				},
+				{
+					type: 'dropdown',
+					label: 'Resulting Variable',
+					id: 'result',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				},
+			],
+		},
+		custom_variable_string_concat_operation: {
+			label: 'Modify Variable Value with String Concatenation Operation',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Variable',
+					id: 'variable',
+					choices: self.CHOICES_VARIABLES
+				},
+				{
+					type: 'textinput',
+					label: 'Combine with Value',
+					id: 'value',
+					default: '',
+				},
+				{
+					type: 'dropdown',
+					label: 'Order',
+					id: 'order',
+					default: 'variable_value',
+					choices: [
+						{ id: 'variable_value', label: 'Variable + Value'},
+						{ id: 'value_variable', label: 'Value + Variable'},
+					]
+				},
+				{
+					type: 'dropdown',
+					label: 'Resulting Variable',
+					id: 'result',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				},
+			],
+		},
+		custom_variable_string_substring_operation: {
+			label: 'Modify Variable Value with String Substring Operation',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Variable',
+					id: 'variable',
+					choices: self.CHOICES_VARIABLES
+				},
+				{
+					type: 'textinput',
+					label: 'Start of Substring',
+					id: 'start',
+					default: '',
+				},
+				{
+					type: 'textinput',
+					label: 'End of Substring',
+					id: 'end',
+					default: '',
+				},
+				{
+					type: 'dropdown',
+					label: 'Resulting Variable',
+					id: 'result',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				},
+			],
+		},
 		custom_variable_set_expression: {
 			label: 'Set custom variable expression',
 			options: [
@@ -992,6 +1202,91 @@ instance.prototype.action = function (action, extras) {
 
 	if (id == 'custom_variable_set_value') {
 		self.system.emit('custom_variable_set_value', opt.name, opt.value)
+	} else if (id == 'custom_variable_math_operation') {
+		let value = '';
+
+		let variable_value = ''
+		const id = opt.variable.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
+
+		let operation_value = opt.value;
+
+		variable_value_number = Number(variable_value);
+		operation_value_number = Number(opt.value);
+
+		switch(opt.operation) {
+			case 'plus':
+				value = variable_value_number + operation_value_number;
+				break;
+			case 'minus':
+				value = variable_value_number - operation_value_number;
+				break;
+			case 'minus_opposite':
+				value = operation_value_number - variable_value_number;
+				break;
+			case 'multiply':
+				value = variable_value_number * operation_value_number;
+				break;
+			case 'divide':
+				value = variable_value_number / operation_value_number;
+				break;
+			case 'divide_opposite':
+				value = operation_value_number / variable_value_number;
+				break;
+		}
+
+		self.system.emit('custom_variable_set_value', opt.result, value);
+	} else if (id == 'custom_variable_math_int_operation') {
+		let value = '';
+
+		let variable_value = ''
+		const id = opt.variable.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
+
+		console.log('variable value: ' + variable_value);
+		value = parseInt(variable_value, opt.radix);
+
+		self.system.emit('custom_variable_set_value', opt.result, value);
+	} else if (id == 'custom_variable_string_trim_operation') {
+		let value = '';
+
+		let variable_value = ''
+		const id = opt.variable.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
+
+		value = variable_value.trim();
+
+		self.system.emit('custom_variable_set_value', opt.result, value);
+	} else if (id == 'custom_variable_string_concat_operation') {
+		let value = '';
+
+		let variable_value = ''
+		const id = opt.variable.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
+
+		let operation_value = opt.value;
+
+		if (opt.order == 'variable_value') {
+			value = variable_value.toString() + operation_value.toString();
+		}
+		else {
+			value = operation_value.toString() + variable_value.toString();
+		}
+
+		self.system.emit('custom_variable_set_value', opt.result, value);
+	} else if (id == 'custom_variable_string_substring_operation') {
+		let value = '';
+
+		let variable_value = ''
+		const id = opt.variable.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
+
+		let start = parseInt(opt.start);
+		let end = parseInt(opt.end);
+
+		value = variable_value.substring(start, end);
+
+		self.system.emit('custom_variable_set_value', opt.result, value);
 	} else if (id === 'custom_variable_set_expression') {
 		self.system.emit('custom_variable_set_expression', opt.name, opt.expression)
 	} else if (id == 'custom_variable_store_variable') {
@@ -1100,6 +1395,42 @@ instance.prototype.action = function (action, extras) {
 	} else if (id == 'button_pressrelease') {
 		self.system.emit('bank_pressed', thePage, theBank, true, theController)
 		self.system.emit('bank_pressed', thePage, theBank, false, theController)
+	} else if (id == 'button_pressrelease_condition') {
+		let variable_value = '';
+		const id = opt.variable.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
+		let value = opt.value;
+
+		let variable_value_number = Number(variable_value);
+		let value_number = Number(value);
+
+		let pressIt = false;
+
+		if (opt.op == 'eq') {
+			if (variable_value.toString() == value.toString()) {
+				pressIt = true;
+			}
+		}
+		else if (opt.op == 'ne') {
+			if (variable_value.toString() !== value.toString()) {
+				pressIt = true;
+			}
+		}
+		else if (opt.op == 'gt') {
+			if (variable_value_number > value_number) {
+				pressIt = true;
+			}
+		}
+		else if (opt.op == 'lt') {
+			if (variable_value_number < value_number) {
+				pressIt = true;
+			}
+		}
+
+		if (pressIt) {
+			self.system.emit('bank_pressed', thePage, theBank, true, theController)
+			self.system.emit('bank_pressed', thePage, theBank, false, theController)
+		}
 	} else if (id == 'button_press') {
 		self.system.emit('bank_pressed', thePage, theBank, true, theController)
 	} else if (id == 'button_release') {
