@@ -649,7 +649,7 @@ instance.prototype.init_actions = function (system) {
 		},
 
 		button_pressrelease_condition: {
-			label: 'Button press and release if Variable meets Condition',
+			label: 'Button Press/Release if Variable meets Condition',
 			options: [
 				{
 					type: 'dropdown',
@@ -692,6 +692,57 @@ instance.prototype.init_actions = function (system) {
 					default: '0',
 					choices: self.CHOICES_BANKS
 				},
+			],
+		},
+
+		button_pressrelease_condition_variable: {
+			label: 'Button Press/Release if Variable meets Condition (Custom Variables)',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'variable',
+					label: 'Variable to check',
+					default: 'internal:time_hms',
+					choices: self.CHOICES_VARIABLES
+				},
+				{
+					type: 'dropdown',
+					label: 'Operation',
+					id: 'op',
+					default: 'eq',
+					choices: [
+						{ id: 'eq', label: '=' },
+						{ id: 'ne', label: '!=' },
+						{ id: 'gt', label: '>' },
+						{ id: 'lt', label: '<' },
+					],
+				},
+				{
+					type: 'textwithvariables',
+					label: 'Value',
+					id: 'value',
+					default: '',
+				},
+				{
+					type: 'dropdown',
+					label: 'Page by Custom Variable',
+					id: 'page',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				},
+				{
+					type: 'dropdown',
+					label: 'Bank by Custom Variable',
+					id: 'bank',
+					default: Object.keys(self.custom_variables)[0],
+					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
+						id: id,
+						label: id,
+					})),
+				}
 			],
 		},
 
@@ -906,7 +957,7 @@ instance.prototype.init_actions = function (system) {
 					]
 				},
 				{
-					type: 'textinput',
+					type: 'textwithvariables',
 					label: 'Value',
 					id: 'value',
 					default: '',
@@ -985,7 +1036,7 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_VARIABLES
 				},
 				{
-					type: 'textinput',
+					type: 'textwithvariables',
 					label: 'Combine with Value',
 					id: 'value',
 					default: '',
@@ -1022,13 +1073,13 @@ instance.prototype.init_actions = function (system) {
 					choices: self.CHOICES_VARIABLES
 				},
 				{
-					type: 'textinput',
+					type: 'textwithvariables',
 					label: 'Start of Substring',
 					id: 'start',
 					default: '',
 				},
 				{
-					type: 'textinput',
+					type: 'textwithvariables',
 					label: 'End of Substring',
 					id: 'end',
 					default: '',
@@ -1209,10 +1260,14 @@ instance.prototype.action = function (action, extras) {
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
 
-		let operation_value = opt.value;
-
 		variable_value_number = Number(variable_value);
-		operation_value_number = Number(opt.value);
+
+		let operation_value = opt.value
+		self.parseVariables(operation_value, function (value) {
+			operation_value = value;
+		});
+
+		operation_value_number = Number(operation_value);
 
 		switch(opt.operation) {
 			case 'plus':
@@ -1243,7 +1298,6 @@ instance.prototype.action = function (action, extras) {
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
 
-		console.log('variable value: ' + variable_value);
 		value = parseInt(variable_value, opt.radix);
 
 		self.system.emit('custom_variable_set_value', opt.result, value);
@@ -1264,7 +1318,10 @@ instance.prototype.action = function (action, extras) {
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
 
-		let operation_value = opt.value;
+		let operation_value = opt.value
+		self.parseVariables(operation_value, function (value) {
+			operation_value = value;
+		});
 
 		if (opt.order == 'variable_value') {
 			value = variable_value.toString() + operation_value.toString();
@@ -1281,8 +1338,15 @@ instance.prototype.action = function (action, extras) {
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
 
-		let start = parseInt(opt.start);
-		let end = parseInt(opt.end);
+		let start = opt.start
+		self.parseVariables(start, function (value) {
+			start = parseInt(value);
+		});
+
+		let end = opt.end
+		self.parseVariables(end, function (value) {
+			end = parseInt(value);
+		});
 
 		value = variable_value.substring(start, end);
 
@@ -1399,35 +1463,88 @@ instance.prototype.action = function (action, extras) {
 		let variable_value = '';
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
-		let value = opt.value;
+
+		let condition = opt.value;
+		self.parseVariables(condition, function (value) {
+			condition = value;
+		});
 
 		let variable_value_number = Number(variable_value);
-		let value_number = Number(value);
+		let condition_number = Number(condition);
 
 		let pressIt = false;
 
 		if (opt.op == 'eq') {
-			if (variable_value.toString() == value.toString()) {
+			if (variable_value.toString() == condition.toString()) {
 				pressIt = true;
 			}
 		}
 		else if (opt.op == 'ne') {
-			if (variable_value.toString() !== value.toString()) {
+			if (variable_value.toString() !== condition.toString()) {
 				pressIt = true;
 			}
 		}
 		else if (opt.op == 'gt') {
-			if (variable_value_number > value_number) {
+			if (variable_value_number > condition_number) {
 				pressIt = true;
 			}
 		}
 		else if (opt.op == 'lt') {
-			if (variable_value_number < value_number) {
+			if (variable_value_number < condition_number) {
 				pressIt = true;
 			}
 		}
 
 		if (pressIt) {
+			self.system.emit('bank_pressed', thePage, theBank, true, theController)
+			self.system.emit('bank_pressed', thePage, theBank, false, theController)
+		}
+	} else if (id == 'button_pressrelease_condition_variable') {
+		let variable_value = '';
+
+		const id = opt.variable.split(':')
+		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
+
+		let condition = opt.value;
+		self.parseVariables(condition, function (value) {
+			condition = value;
+		});
+
+		let variable_value_number = Number(variable_value);
+		let condition_number = Number(condition);
+
+		let pressIt = false;
+
+		if (opt.op == 'eq') {
+			if (variable_value.toString() == condition.toString()) {
+				pressIt = true;
+			}
+		}
+		else if (opt.op == 'ne') {
+			if (variable_value.toString() !== condition.toString()) {
+				pressIt = true;
+			}
+		}
+		else if (opt.op == 'gt') {
+			if (variable_value_number > condition_number) {
+				pressIt = true;
+			}
+		}
+		else if (opt.op == 'lt') {
+			if (variable_value_number < condition_number) {
+				pressIt = true;
+			}
+		}
+
+		if (pressIt) {
+			const page_id = opt.page.split(':')
+			self.system.emit('variable_get', page_id[0], page_id[1], (v) => (thePage = v))
+			thePage = parseInt(thePage)
+
+			const bank_id = opt.bank.split(':')
+			self.system.emit('variable_get', bank_id[0], bank_id[1], (v) => (theBank = v))
+			theBank = parseInt(theBank)
+
 			self.system.emit('bank_pressed', thePage, theBank, true, theController)
 			self.system.emit('bank_pressed', thePage, theBank, false, theController)
 		}
