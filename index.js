@@ -65,23 +65,12 @@ instance.prototype.init = function () {
 	self.callbacks = {}
 	self.instances = {}
 	self.active = {}
-	self.pages = {}
 	self.cached_bank_info = {}
 	self.pageHistory = {}
 	self.custom_variables = {}
 	self.triggers = []
 
 	self.feedback_variable_subscriptions = {}
-
-	self.CHOICES_INSTANCES = []
-	self.CHOICES_SURFACES = []
-	self.CHOICES_PAGES = []
-	self.CHOICES_BANKS = [{ label: 'This button', id: 0 }]
-	self.CHOICES_VARIABLES = []
-
-	for (let bank = 1; bank <= global.MAX_BUTTONS; bank++) {
-		self.CHOICES_BANKS.push({ label: bank, id: bank })
-	}
 
 	self.BUTTON_ACTIONS = [
 		'button_pressrelease',
@@ -94,9 +83,6 @@ instance.prototype.init = function () {
 	]
 
 	self.PAGE_ACTIONS = ['set_page', 'set_page_byindex', 'inc_page', 'dec_page']
-
-	self.pages_getall()
-	self.addSystemCallback('page_update', self.pages_update.bind(self))
 
 	self.devices_getall()
 	self.addSystemCallback('devices_list', self.devices_list.bind(self))
@@ -112,22 +98,22 @@ instance.prototype.init = function () {
 	self.instance_save()
 	self.addSystemCallback('instance_save', self.instance_save.bind(self))
 
-	self.addSystemCallback('variable_instance_definitions_set', self.variable_list_update.bind(self))
 	self.addSystemCallback('variables_changed', self.variables_changed.bind(self))
-	self.variable_list_update()
 
 	self.addSystemCallback('custom_variables_update', self.custom_variable_list_update.bind(self))
 	self.custom_variable_list_update()
 
-	// self.init_feedback() // called by variable_list_update
+	self.addSystemCallback('schedule_refresh', self.triggers_update.bind(self))
+	self.triggers_update()
+
+	// self.init_feedback() // Done by self.triggers_update()
+	// self.init_actions() // Done by self.triggers_update()
+	// self.update_variables() // Done by self.custom_variable_list_update()
+
 	self.checkFeedbacks()
-	self.update_variables()
 
 	self.subscribeFeedbacks('variable_value')
 	self.subscribeFeedbacks('variable_variable')
-
-	self.addSystemCallback('schedule_refresh', self.triggers_update.bind(self))
-	self.triggers_update()
 
 	self.status(self.STATE_OK)
 }
@@ -150,21 +136,6 @@ instance.prototype.bind_ip_get = function () {
 	self.system.emit('config_get', 'bind_ip', function (bind_ip) {
 		self.setVariable('bind_ip', bind_ip)
 	})
-}
-
-instance.prototype.pages_getall = function () {
-	let self = this
-
-	self.system.emit('get_page', function (pages) {
-		self.pages = pages
-	})
-}
-
-instance.prototype.pages_update = function () {
-	let self = this
-
-	// Update dropdowns
-	self.init_actions()
 }
 
 instance.prototype.banks_getall = function () {
@@ -206,8 +177,6 @@ instance.prototype.custom_variable_list_update = function (data) {
 	}
 
 	self.update_variables()
-
-	self.init_actions()
 }
 
 instance.prototype.triggers_update = function (data) {
@@ -290,7 +259,6 @@ instance.prototype.devices_list = function (list) {
 	let self = this
 
 	self.devices = list
-	self.init_actions()
 }
 
 instance.prototype.devices_getall = function () {
@@ -301,21 +269,6 @@ instance.prototype.devices_getall = function () {
 	})
 }
 
-instance.prototype.variable_list_update = function () {
-	let self = this
-
-	self.system.emit('variable_get_definitions', function (list) {
-		self.CHOICES_VARIABLES = []
-		for (const [id, variables] of Object.entries(list)) {
-			for (const variable of variables) {
-				const v = `${id}:${variable.name}`
-				self.CHOICES_VARIABLES.push({ label: `${v} - ${variable.label}`, id: v })
-			}
-		}
-	})
-
-	self.init_feedback()
-}
 instance.prototype.variables_changed = function (changed_variables, removed_variables) {
 	let self = this
 
@@ -347,17 +300,6 @@ instance.prototype.instance_getall = function (instances, active) {
 	let self = this
 	self.instances = instances
 	self.active = active
-	self.CHOICES_INSTANCES.length = 0
-
-	for (let key in self.instances) {
-		if (self.instances[key].label !== 'internal') {
-			self.CHOICES_INSTANCES.push({ label: self.instances[key].label, id: key })
-		}
-	}
-
-	self.init_actions()
-
-	self.init_feedback()
 }
 
 instance.prototype.addSystemCallback = function (name, cb) {
@@ -410,74 +352,14 @@ instance.prototype.destroy = function () {
 instance.prototype.init_actions = function (system) {
 	let self = this
 
-	self.CHOICES_SURFACES.length = 0
-	self.CHOICES_SURFACES.push({
-		label: 'Current surface',
-		id: 'self',
-	})
-
-	for (const device of self.devices) {
-		self.CHOICES_SURFACES.push({
-			label: `${device.name || device.type} (${device.serialnumber})`,
-			id: device.serialnumber,
-		})
-	}
-
-	self.CHOICES_PAGES = [{ label: 'This page', id: 0 }]
-
-	for (let page in self.pages) {
-		let name = page
-
-		if (self.pages[page].name !== undefined && self.pages[page].name != 'PAGE') {
-			name += ' (' + self.pages[page].name + ')'
-		}
-		self.CHOICES_PAGES.push({
-			label: name,
-			id: page,
-		})
-	}
-
-	self.FIELD_JSON_DATA_VARIABLE = {
-		type: 'dropdown',
-		label: 'JSON Result Data Variable',
-		id: 'jsonResultDataVariable',
-		default: '',
-		choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-			id: id,
-			label: id,
-		})),
-	}
-	self.FIELD_JSON_DATA_VARIABLE.choices.unshift({ id: '', label: '<NONE>' })
-
-	self.FIELD_JSON_PATH = {
-		type: 'textwithvariables',
-		label: 'Path (like $.age)',
-		id: 'jsonPath',
-		default: '',
-	}
-
-	self.FIELD_TARGET_VARIABLE = {
-		type: 'dropdown',
-		label: 'Target Variable',
-		id: 'targetVariable',
-		default: '',
-		choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-			id: id,
-			label: id,
-		})),
-	}
-	self.FIELD_TARGET_VARIABLE.choices.unshift({ id: '', label: '<NONE>' })
-
 	actions = {
 		instance_control: {
 			label: 'Enable or disable connection',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:instance_id',
 					label: 'Connection',
 					id: 'instance_id',
-					default: self.CHOICES_INSTANCES.length > 0 ? self.CHOICES_INSTANCES[0].id : undefined,
-					choices: self.CHOICES_INSTANCES,
 				},
 				{
 					type: 'dropdown',
@@ -492,18 +374,15 @@ instance.prototype.init_actions = function (system) {
 			label: 'Set surface with s/n to page',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:surface_serial',
 					label: 'Surface / controller',
 					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					id: 'page',
-					default: '1',
-					choices: [{ id: 'back', label: 'Back' }, { id: 'forward', label: 'Forward' }, ...self.CHOICES_PAGES],
+					includeDirection: true,
 				},
 			],
 		},
@@ -522,11 +401,10 @@ instance.prototype.init_actions = function (system) {
 					range: false,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					id: 'page',
-					default: '1',
-					choices: [{ id: 'back', label: 'Back' }, { id: 'forward', label: 'Forward' }, ...self.CHOICES_PAGES],
+					includeDirection: true,
 				},
 			],
 		},
@@ -534,11 +412,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Set surface with s/n brightness',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:surface_serial',
 					label: 'Surface / controller',
 					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
 				},
 				{
 					type: 'number',
@@ -556,11 +432,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Trigger a device to lockout immediately.',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:surface_serial',
 					label: 'Surface / controller',
 					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
 				},
 			],
 		},
@@ -568,11 +442,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Trigger a device to unlock immediately.',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:surface_serial',
 					label: 'Surface / controller',
 					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
 				},
 			],
 		},
@@ -605,11 +477,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Increment page number',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:surface_serial',
 					label: 'Surface / controller',
 					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
 				},
 			],
 		},
@@ -617,11 +487,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Decrement page number',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:surface_serial',
 					label: 'Surface / controller',
 					id: 'controller',
-					default: 'self',
-					choices: self.CHOICES_SURFACES,
 				},
 			],
 		},
@@ -630,20 +498,16 @@ instance.prototype.init_actions = function (system) {
 			label: 'Button press and release',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:bank',
 					label: 'Bank',
 					tooltip: 'Which button?',
 					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
 				},
 			],
 		},
@@ -652,11 +516,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Button Press/Release if Variable meets Condition',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:variable',
 					id: 'variable',
 					label: 'Variable to check',
-					default: 'internal:time_hms',
-					choices: self.CHOICES_VARIABLES
 				},
 				{
 					type: 'dropdown',
@@ -677,20 +539,16 @@ instance.prototype.init_actions = function (system) {
 					default: '',
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:bank',
 					label: 'Bank',
 					tooltip: 'Which button?',
 					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS
 				},
 			],
 		},
@@ -699,11 +557,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Button Press/Release if Variable meets Condition (Custom Variables)',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:variable',
 					id: 'variable',
 					label: 'Variable to check',
-					default: 'internal:time_hms',
-					choices: self.CHOICES_VARIABLES
 				},
 				{
 					type: 'dropdown',
@@ -724,25 +580,15 @@ instance.prototype.init_actions = function (system) {
 					default: '',
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Page by Custom Variable',
 					id: 'page',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Bank by Custom Variable',
 					id: 'bank',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
-				}
+				},
 			],
 		},
 
@@ -750,20 +596,16 @@ instance.prototype.init_actions = function (system) {
 			label: 'Button Press',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:bank',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
 				},
 			],
 		},
@@ -772,20 +614,16 @@ instance.prototype.init_actions = function (system) {
 			label: 'Button Release',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:bank',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
 				},
 			],
 		},
@@ -800,20 +638,16 @@ instance.prototype.init_actions = function (system) {
 					default: '',
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:bank',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
 				},
 			],
 		},
@@ -828,20 +662,16 @@ instance.prototype.init_actions = function (system) {
 					default: '0',
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:bank',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
 				},
 			],
 		},
@@ -856,20 +686,16 @@ instance.prototype.init_actions = function (system) {
 					default: '0',
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:bank',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
 				},
 			],
 		},
@@ -881,20 +707,16 @@ instance.prototype.init_actions = function (system) {
 			label: 'Abort actions on button',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:page',
 					label: 'Page',
 					tooltip: 'What page is the button on?',
 					id: 'page',
-					default: '0',
-					choices: self.CHOICES_PAGES,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:bank',
 					label: 'Bank',
 					tooltip: 'Which Button?',
 					id: 'bank',
-					default: '0',
-					choices: self.CHOICES_BANKS,
 				},
 				{
 					type: 'checkbox',
@@ -916,14 +738,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Set custom variable value',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Custom variable',
 					id: 'name',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 				{
 					type: 'textinput',
@@ -937,10 +754,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Modify Variable Value with Math Operation',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:variable',
 					label: 'Variable',
 					id: 'variable',
-					choices: self.CHOICES_VARIABLES
 				},
 				{
 					type: 'dropdown',
@@ -948,13 +764,13 @@ instance.prototype.init_actions = function (system) {
 					id: 'operation',
 					default: 'plus',
 					choices: [
-						{ id: 'plus', label: 'Variable Plus Value'},
-						{ id: 'minus', label: 'Variable Minus Value'},
-						{ id: 'minus_opposite', label: 'Value Minus Variable'},
-						{ id: 'multiply', label: 'Variable Multiplied By Value'},
-						{ id: 'divide', label: 'Variable Divided By Value'},
-						{ id: 'divide_opposite', label: 'Value Divided By Variable'}
-					]
+						{ id: 'plus', label: 'Variable Plus Value' },
+						{ id: 'minus', label: 'Variable Minus Value' },
+						{ id: 'minus_opposite', label: 'Value Minus Variable' },
+						{ id: 'multiply', label: 'Variable Multiplied By Value' },
+						{ id: 'divide', label: 'Variable Divided By Value' },
+						{ id: 'divide_opposite', label: 'Value Divided By Variable' },
+					],
 				},
 				{
 					type: 'textwithvariables',
@@ -963,14 +779,9 @@ instance.prototype.init_actions = function (system) {
 					default: '',
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Resulting Variable',
 					id: 'result',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 			],
 		},
@@ -978,10 +789,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Modify Variable Value with Math Convert To Int Operation',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:variable',
 					label: 'Variable',
 					id: 'variable',
-					choices: self.CHOICES_VARIABLES
 				},
 				{
 					type: 'number',
@@ -991,17 +801,12 @@ instance.prototype.init_actions = function (system) {
 					min: 2,
 					max: 36,
 					step: 1,
-					range: true
+					range: true,
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Resulting Variable',
 					id: 'result',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 			],
 		},
@@ -1009,20 +814,14 @@ instance.prototype.init_actions = function (system) {
 			label: 'Modify Variable Value with String Trim Operation',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:variable',
 					label: 'Variable',
 					id: 'variable',
-					choices: self.CHOICES_VARIABLES
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Resulting Variable',
 					id: 'result',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 			],
 		},
@@ -1030,10 +829,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Modify Variable Value with String Concatenation Operation',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:variable',
 					label: 'Variable',
 					id: 'variable',
-					choices: self.CHOICES_VARIABLES
 				},
 				{
 					type: 'textwithvariables',
@@ -1047,19 +845,14 @@ instance.prototype.init_actions = function (system) {
 					id: 'order',
 					default: 'variable_value',
 					choices: [
-						{ id: 'variable_value', label: 'Variable + Value'},
-						{ id: 'value_variable', label: 'Value + Variable'},
-					]
+						{ id: 'variable_value', label: 'Variable + Value' },
+						{ id: 'value_variable', label: 'Value + Variable' },
+					],
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Resulting Variable',
 					id: 'result',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 			],
 		},
@@ -1067,10 +860,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Modify Variable Value with String Substring Operation',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:variable',
 					label: 'Variable',
 					id: 'variable',
-					choices: self.CHOICES_VARIABLES
 				},
 				{
 					type: 'textwithvariables',
@@ -1085,14 +877,9 @@ instance.prototype.init_actions = function (system) {
 					default: '',
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Resulting Variable',
 					id: 'result',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 			],
 		},
@@ -1100,14 +887,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Set custom variable expression',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Custom variable',
 					id: 'name',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 				{
 					type: 'textwithvariables',
@@ -1121,28 +903,39 @@ instance.prototype.init_actions = function (system) {
 			label: 'Store variable value to custom variable',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:custom_variable',
 					label: 'Custom variable',
 					id: 'name',
-					default: Object.keys(self.custom_variables)[0],
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 				{
-					type: 'dropdown',
+					type: 'internal:variable',
 					id: 'variable',
 					label: 'Variable to store value from',
 					tooltip: 'What variable to store in the custom variable?',
-					default: 'internal:time_hms',
-					choices: self.CHOICES_VARIABLES,
 				},
 			],
 		},
 		custom_variable_set_via_jsonpath: {
 			label: 'Set custom variable from a stored JSONresult via a JSONpath expression',
-			options: [self.FIELD_JSON_DATA_VARIABLE, self.FIELD_JSON_PATH, self.FIELD_TARGET_VARIABLE],
+			options: [
+				{
+					type: 'internal:custom_variable',
+					label: 'JSON Result Data Variable',
+					id: 'jsonResultDataVariable',
+				},
+
+				{
+					type: 'textwithvariables',
+					label: 'Path (like $.age)',
+					id: 'jsonPath',
+					default: '',
+				},
+				{
+					type: 'internal:custom_variable',
+					label: 'Target Variable',
+					id: 'targetVariable',
+				},
+			],
 		},
 		trigger_enabled: {
 			label: 'Enable or disable trigger',
@@ -1254,65 +1047,65 @@ instance.prototype.action = function (action, extras) {
 	if (id == 'custom_variable_set_value') {
 		self.system.emit('custom_variable_set_value', opt.name, opt.value)
 	} else if (id == 'custom_variable_math_operation') {
-		let value = '';
+		let value = ''
 
 		let variable_value = ''
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
 
-		variable_value_number = Number(variable_value);
+		variable_value_number = Number(variable_value)
 
 		let operation_value = opt.value
 		self.parseVariables(operation_value, function (value) {
-			operation_value = value;
-		});
+			operation_value = value
+		})
 
-		operation_value_number = Number(operation_value);
+		operation_value_number = Number(operation_value)
 
-		switch(opt.operation) {
+		switch (opt.operation) {
 			case 'plus':
-				value = variable_value_number + operation_value_number;
-				break;
+				value = variable_value_number + operation_value_number
+				break
 			case 'minus':
-				value = variable_value_number - operation_value_number;
-				break;
+				value = variable_value_number - operation_value_number
+				break
 			case 'minus_opposite':
-				value = operation_value_number - variable_value_number;
-				break;
+				value = operation_value_number - variable_value_number
+				break
 			case 'multiply':
-				value = variable_value_number * operation_value_number;
-				break;
+				value = variable_value_number * operation_value_number
+				break
 			case 'divide':
-				value = variable_value_number / operation_value_number;
-				break;
+				value = variable_value_number / operation_value_number
+				break
 			case 'divide_opposite':
-				value = operation_value_number / variable_value_number;
-				break;
+				value = operation_value_number / variable_value_number
+				break
 		}
 
-		self.system.emit('custom_variable_set_value', opt.result, value);
+		self.system.emit('custom_variable_set_value', opt.result, value)
 	} else if (id == 'custom_variable_math_int_operation') {
-		let value = '';
+		let value = ''
 
 		let variable_value = ''
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
 
-		value = parseInt(variable_value, opt.radix);
+		value = parseInt(variable_value, opt.radix)
 
-		self.system.emit('custom_variable_set_value', opt.result, value);
+		self.system.emit('custom_variable_set_value', opt.result, value)
 	} else if (id == 'custom_variable_string_trim_operation') {
-		let value = '';
+		let value = ''
 
 		let variable_value = ''
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
 
-		value = variable_value.trim();
+		value = variable_value.trim()
 
-		self.system.emit('custom_variable_set_value', opt.result, value);
+		self.system.emit('custom_variable_set_value', opt.result, value)
 	} else if (id == 'custom_variable_string_concat_operation') {
-		let value = '';
+		let value = ''
 
 		let variable_value = ''
 		const id = opt.variable.split(':')
@@ -1320,19 +1113,18 @@ instance.prototype.action = function (action, extras) {
 
 		let operation_value = opt.value
 		self.parseVariables(operation_value, function (value) {
-			operation_value = value;
-		});
+			operation_value = value
+		})
 
 		if (opt.order == 'variable_value') {
-			value = variable_value.toString() + operation_value.toString();
-		}
-		else {
-			value = operation_value.toString() + variable_value.toString();
+			value = variable_value.toString() + operation_value.toString()
+		} else {
+			value = operation_value.toString() + variable_value.toString()
 		}
 
-		self.system.emit('custom_variable_set_value', opt.result, value);
+		self.system.emit('custom_variable_set_value', opt.result, value)
 	} else if (id == 'custom_variable_string_substring_operation') {
-		let value = '';
+		let value = ''
 
 		let variable_value = ''
 		const id = opt.variable.split(':')
@@ -1340,17 +1132,17 @@ instance.prototype.action = function (action, extras) {
 
 		let start = opt.start
 		self.parseVariables(start, function (value) {
-			start = parseInt(value);
-		});
+			start = parseInt(value)
+		})
 
 		let end = opt.end
 		self.parseVariables(end, function (value) {
-			end = parseInt(value);
-		});
+			end = parseInt(value)
+		})
 
-		value = variable_value.substring(start, end);
+		value = variable_value.substring(start, end)
 
-		self.system.emit('custom_variable_set_value', opt.result, value);
+		self.system.emit('custom_variable_set_value', opt.result, value)
 	} else if (id === 'custom_variable_set_expression') {
 		self.system.emit('custom_variable_set_expression', opt.name, opt.expression)
 	} else if (id == 'custom_variable_store_variable') {
@@ -1460,38 +1252,35 @@ instance.prototype.action = function (action, extras) {
 		self.system.emit('bank_pressed', thePage, theBank, true, theController)
 		self.system.emit('bank_pressed', thePage, theBank, false, theController)
 	} else if (id == 'button_pressrelease_condition') {
-		let variable_value = '';
+		let variable_value = ''
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
 
-		let condition = opt.value;
+		let condition = opt.value
 		self.parseVariables(condition, function (value) {
-			condition = value;
-		});
+			condition = value
+		})
 
-		let variable_value_number = Number(variable_value);
-		let condition_number = Number(condition);
+		let variable_value_number = Number(variable_value)
+		let condition_number = Number(condition)
 
-		let pressIt = false;
+		let pressIt = false
 
 		if (opt.op == 'eq') {
 			if (variable_value.toString() == condition.toString()) {
-				pressIt = true;
+				pressIt = true
 			}
-		}
-		else if (opt.op == 'ne') {
+		} else if (opt.op == 'ne') {
 			if (variable_value.toString() !== condition.toString()) {
-				pressIt = true;
+				pressIt = true
 			}
-		}
-		else if (opt.op == 'gt') {
+		} else if (opt.op == 'gt') {
 			if (variable_value_number > condition_number) {
-				pressIt = true;
+				pressIt = true
 			}
-		}
-		else if (opt.op == 'lt') {
+		} else if (opt.op == 'lt') {
 			if (variable_value_number < condition_number) {
-				pressIt = true;
+				pressIt = true
 			}
 		}
 
@@ -1500,39 +1289,36 @@ instance.prototype.action = function (action, extras) {
 			self.system.emit('bank_pressed', thePage, theBank, false, theController)
 		}
 	} else if (id == 'button_pressrelease_condition_variable') {
-		let variable_value = '';
+		let variable_value = ''
 
 		const id = opt.variable.split(':')
 		self.system.emit('variable_get', id[0], id[1], (v) => (variable_value = v))
 
-		let condition = opt.value;
+		let condition = opt.value
 		self.parseVariables(condition, function (value) {
-			condition = value;
-		});
+			condition = value
+		})
 
-		let variable_value_number = Number(variable_value);
-		let condition_number = Number(condition);
+		let variable_value_number = Number(variable_value)
+		let condition_number = Number(condition)
 
-		let pressIt = false;
+		let pressIt = false
 
 		if (opt.op == 'eq') {
 			if (variable_value.toString() == condition.toString()) {
-				pressIt = true;
+				pressIt = true
 			}
-		}
-		else if (opt.op == 'ne') {
+		} else if (opt.op == 'ne') {
 			if (variable_value.toString() !== condition.toString()) {
-				pressIt = true;
+				pressIt = true
 			}
-		}
-		else if (opt.op == 'gt') {
+		} else if (opt.op == 'gt') {
 			if (variable_value_number > condition_number) {
-				pressIt = true;
+				pressIt = true
 			}
-		}
-		else if (opt.op == 'lt') {
+		} else if (opt.op == 'lt') {
 			if (variable_value_number < condition_number) {
-				pressIt = true;
+				pressIt = true
 			}
 		}
 
@@ -1775,16 +1561,6 @@ instance.prototype.init_feedback = function () {
 	let self = this
 
 	let feedbacks = {}
-	let instance_choices = []
-
-	Object.entries(self.instances).forEach((entry) => {
-		const [key, value] = entry
-		if (value.label == 'internal') {
-			instance_choices.push({ id: 'all', label: 'All Connections' })
-		} else {
-			instance_choices.push({ id: key, label: value.label })
-		}
-	})
 
 	feedbacks['instance_status'] = {
 		label: 'Companion Connection Status',
@@ -1792,11 +1568,10 @@ instance.prototype.init_feedback = function () {
 			'Change button color on Connection Status\nDisabled color is not used when "All" connections is selected',
 		options: [
 			{
-				type: 'dropdown',
+				type: 'internal:instance_id',
 				label: 'Connection or All',
 				id: 'instance_id',
-				choices: instance_choices,
-				default: 'all',
+				includeAll: true,
 			},
 			{
 				type: 'colorpicker',
@@ -1853,20 +1628,16 @@ instance.prototype.init_feedback = function () {
 		description: 'Imitate the style of another button',
 		options: [
 			{
-				type: 'dropdown',
+				type: 'internal:page',
 				label: 'Page',
 				tooltip: 'What page is the button on?',
 				id: 'page',
-				default: '0',
-				choices: self.CHOICES_PAGES,
 			},
 			{
-				type: 'dropdown',
+				type: 'internal:bank',
 				label: 'Bank',
 				tooltip: 'Which Button?',
 				id: 'bank',
-				default: '0',
-				choices: self.CHOICES_BANKS,
 			},
 		],
 	}
@@ -1880,20 +1651,16 @@ instance.prototype.init_feedback = function () {
 		},
 		options: [
 			{
-				type: 'dropdown',
+				type: 'internal:page',
 				label: 'Page',
 				tooltip: 'What page is the button on?',
 				id: 'page',
-				default: '0',
-				choices: self.CHOICES_PAGES,
 			},
 			{
-				type: 'dropdown',
+				type: 'internal:bank',
 				label: 'Bank',
 				tooltip: 'Which Button?',
 				id: 'bank',
-				default: '0',
-				choices: self.CHOICES_BANKS,
 			},
 		],
 	}
@@ -1907,12 +1674,10 @@ instance.prototype.init_feedback = function () {
 		},
 		options: [
 			{
-				type: 'dropdown',
+				type: 'internal:variable',
 				label: 'Variable',
 				tooltip: 'What variable to act on?',
 				id: 'variable',
-				default: 'internal:time_hms',
-				choices: self.CHOICES_VARIABLES,
 			},
 			{
 				type: 'dropdown',
@@ -1952,12 +1717,10 @@ instance.prototype.init_feedback = function () {
 		},
 		options: [
 			{
-				type: 'dropdown',
+				type: 'internal:variable',
 				label: 'Compare Variable',
 				tooltip: 'What variable to act on?',
 				id: 'variable',
-				default: 'internal:time_hms',
-				choices: self.CHOICES_VARIABLES,
 			},
 			{
 				type: 'dropdown',
@@ -1972,12 +1735,10 @@ instance.prototype.init_feedback = function () {
 				],
 			},
 			{
-				type: 'dropdown',
+				type: 'internal:variable',
 				label: 'Against Variable',
 				tooltip: 'What variable to compare with?',
 				id: 'variable2',
-				default: 'internal:time_hms',
-				choices: self.CHOICES_VARIABLES,
 			},
 		],
 		subscribe: (fb) => {
