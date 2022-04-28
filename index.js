@@ -115,6 +115,20 @@ instance.prototype.init = function () {
 	self.subscribeFeedbacks('variable_value')
 	self.subscribeFeedbacks('variable_variable')
 
+	self.setVariables({
+		instance_errors: 0,
+		instance_warns: 0,
+		instance_oks: 0,
+		time_hms: '',
+		time_hm: '',
+		time_h: '',
+		time_m: '',
+		time_s: '',
+		't-bar': '0',
+		jog: '0',
+		shuttle: '0',
+	})
+
 	self.status(self.STATE_OK)
 }
 
@@ -1533,20 +1547,6 @@ instance.prototype.update_variables = function () {
 	}
 
 	self.setVariableDefinitions(variables)
-
-	self.setVariables({
-		instance_errors: 0,
-		instance_warns: 0,
-		instance_oks: 0,
-		time_hms: '',
-		time_hm: '',
-		time_h: '',
-		time_m: '',
-		time_s: '',
-		't-bar': '0',
-		jog: '0',
-		shuttle: '0',
-	})
 }
 
 instance.prototype.init_feedback = function () {
