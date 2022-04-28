@@ -106,8 +106,8 @@ instance.prototype.init = function () {
 	self.addSystemCallback('schedule_refresh', self.triggers_update.bind(self))
 	self.triggers_update()
 
-	// self.init_feedback() // Done by self.triggers_update()
-	// self.init_actions() // Done by self.triggers_update()
+	self.init_feedback() // Done by self.triggers_update()
+	self.init_actions() // Done by self.triggers_update()
 	// self.update_variables() // Done by self.custom_variable_list_update()
 
 	self.checkFeedbacks()
@@ -189,9 +189,6 @@ instance.prototype.triggers_update = function (data) {
 			self.triggers = d
 		})
 	}
-
-	self.init_actions()
-	self.init_feedback()
 
 	self.checkFeedbacks('trigger_enabled')
 }
@@ -941,14 +938,9 @@ instance.prototype.init_actions = function (system) {
 			label: 'Enable or disable trigger',
 			options: [
 				{
-					type: 'dropdown',
+					type: 'internal:trigger',
 					label: 'Trigger',
 					id: 'trigger_id',
-					default: self.triggers[0] && self.triggers[0].id,
-					choices: self.triggers.map((info) => ({
-						id: info.id,
-						label: info.title || info.id,
-					})),
 				},
 				{
 					type: 'dropdown',
@@ -1759,14 +1751,9 @@ instance.prototype.init_feedback = function () {
 		},
 		options: [
 			{
-				type: 'dropdown',
+				type: 'internal:trigger',
 				label: 'Trigger',
 				id: 'trigger_id',
-				default: self.triggers[0] && self.triggers[0].id,
-				choices: self.triggers.map((info) => ({
-					id: info.id,
-					label: info.title || info.id,
-				})),
 			},
 			{
 				type: 'dropdown',
