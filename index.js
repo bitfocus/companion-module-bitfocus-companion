@@ -476,6 +476,11 @@ instance.prototype.init_actions = function (system) {
 					max: 20000,
 					required: true,
 				},
+				{
+					type: 'internal:custom_variable',
+					label: 'Target Variable (stdout)',
+					id: 'targetVariable',
+				},
 			],
 		},
 		lockout_all: {
@@ -1361,6 +1366,7 @@ instance.prototype.action = function (action, extras) {
 						self.log('error', 'Shell command failed. Guru meditation: ' + JSON.stringify(error))
 						self.debug(error)
 					}
+					self.system.emit('custom_variable_set_value', action.options.targetVariable, stdout)
 				}
 			)
 		}
