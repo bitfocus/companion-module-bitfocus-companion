@@ -477,14 +477,9 @@ instance.prototype.init_actions = function (system) {
 					required: true,
 				},
 				{
-					type: 'dropdown',
-					label: 'Target Variable',
+					type: 'internal:custom_variable',
+					label: 'Target Variable (stdout)',
 					id: 'targetVariable',
-					default: '',
-					choices: Object.entries(self.custom_variables).map(([id, info]) => ({
-						id: id,
-						label: id,
-					})),
 				},
 			],
 		},
