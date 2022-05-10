@@ -480,6 +480,7 @@ instance.prototype.init_actions = function (system) {
 					type: 'internal:custom_variable',
 					label: 'Target Variable (stdout)',
 					id: 'targetVariable',
+					includeNone: true,
 				},
 			],
 		},
