@@ -577,6 +577,17 @@ instance.prototype.init_actions = function (system) {
 					id: 'bank',
 				},
 			],
+			learn: (action) => {
+				let value = ''
+
+				const id = action.options.variable.split(':')
+				self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
+
+				return {
+					...action.options,
+					value: value,
+				}
+			},
 		},
 
 		button_pressrelease_condition_variable: {
@@ -616,6 +627,17 @@ instance.prototype.init_actions = function (system) {
 					id: 'bank',
 				},
 			],
+			learn: (action) => {
+				let value = ''
+
+				const id = action.options.variable.split(':')
+				self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
+
+				return {
+					...action.options,
+					value: value,
+				}
+			},
 		},
 
 		button_press: {
@@ -775,6 +797,19 @@ instance.prototype.init_actions = function (system) {
 					default: '',
 				},
 			],
+			learn: (action) => {
+				let value = ''
+
+				let variableName = `custom_${action.options.name}`
+				self.system.emit('variable_get', 'internal', variableName, (_value) => {
+					value = _value
+				})
+
+				return {
+					...action.options,
+					value: value,
+				}
+			},
 		},
 		custom_variable_math_operation: {
 			label: 'Modify Variable Value with Math Operation',
@@ -993,7 +1028,7 @@ instance.prototype.init_actions = function (system) {
 		}
 	}
 
-	self.system.emit('instance_actions', self.id, actions)
+	self.setActions(actions)
 }
 
 instance.prototype.action = function (action, extras) {
@@ -1737,6 +1772,16 @@ instance.prototype.init_feedback = function () {
 		},
 		unsubscribe: (fb) => {
 			delete self.feedback_variable_subscriptions[fb.id]
+		},
+		learn: (fb) => {
+			let value = ''
+			const id = fb.options.variable.split(':')
+			self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
+
+			return {
+				...fb.options,
+				value: value,
+			}
 		},
 	}
 	feedbacks['variable_variable'] = {
