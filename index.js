@@ -40,12 +40,12 @@ function instance(system, id, config) {
 		const hhmm = hh + ':' + mm
 		const hhmmss = hhmm + ':' + ss
 		self.setVariables({
-			date_iso: now.toISOString().slice(0,10),
+			date_iso: now.toISOString().slice(0, 10),
 			date_y: now.getFullYear(),
 			date_m: month,
 			date_d: day,
 			date_dow: now.getDay(),
-			date_weekday: now.toLocaleString(undefined, {weekday: 'long'}),
+			date_weekday: now.toLocaleString(undefined, { weekday: 'long' }),
 			time_hms: hhmmss,
 			time_hm: hhmm,
 			time_h: hh,
@@ -278,14 +278,14 @@ instance.prototype.bank_indicate_push = function (page, bank, state) {
 instance.prototype.devices_list = function (list) {
 	let self = this
 
-	self.devices = list
+	self.devices = Object.values(list)
 }
 
 instance.prototype.devices_getall = function () {
 	let self = this
 
 	self.system.emit('devices_list_get', function (list) {
-		self.devices = list
+		self.devices = Object.values(list)
 	})
 }
 
