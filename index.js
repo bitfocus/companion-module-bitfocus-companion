@@ -539,7 +539,7 @@ instance.prototype.init_actions = function (system) {
 		},
 
 		button_pressrelease_condition: {
-			label: 'Button Press/Release if Variable meets Condition',
+			label: 'Button Press and Release if Variable meets Condition',
 			options: [
 				{
 					type: 'internal:variable',
@@ -591,7 +591,7 @@ instance.prototype.init_actions = function (system) {
 		},
 
 		button_pressrelease_condition_variable: {
-			label: 'Button Press/Release if Variable meets Condition (Custom Variables)',
+			label: 'Button Press and Release if Variable meets Condition (Custom Variables)',
 			options: [
 				{
 					type: 'internal:variable',
