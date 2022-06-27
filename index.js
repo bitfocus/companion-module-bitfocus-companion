@@ -386,7 +386,6 @@ instance.prototype.init_actions = function (system) {
 					label: 'Enable',
 					id: 'enable',
 					default: 'true',
-					// choices: self.CHOICES_YESNO_BOOLEAN, // original
 					choices: [
 						{ id: 'toggle', label: 'Toggle' },
 						{ id: 'true', label: 'Yes' },
@@ -1216,7 +1215,7 @@ instance.prototype.action = function (action, extras) {
 		if (self.instance_status.hasOwnProperty(opt.instance_id)) {
 			curState = self.instance_status[opt.instance_id][0]
 		}
-		else curState = -1 // no status entry if instance is disabled
+		else curState = -1 // no status entry if instance is disabled on startup
 		let newState = opt.enable  == 'true'
 		if (opt.enable == 'toggle') {
 			if (curState == -1) newState = true
