@@ -40,12 +40,9 @@ function instance(system, id, config) {
 		const hhmm = hh + ':' + mm
 		const hhmmss = hhmm + ':' + ss
 		self.setVariables({
-			date_iso: now.toISOString().slice(0,10),
 			date_y: now.getFullYear(),
 			date_m: month,
 			date_d: day,
-			date_dow: now.getDay(),
-			date_weekday: now.toLocaleString(undefined, {weekday: 'long'}),
 			time_hms: hhmmss,
 			time_hm: hhmm,
 			time_h: hh,
@@ -122,12 +119,6 @@ instance.prototype.init = function () {
 		instance_errors: 0,
 		instance_warns: 0,
 		instance_oks: 0,
-		date_iso: '',
-		date_y: '',
-		date_m: '',
-		date_d: '',
-		date_dow: '',
-		date_weekday: '',
 		time_hms: '',
 		time_hm: '',
 		time_h: '',
@@ -1511,30 +1502,6 @@ instance.prototype.update_variables = function () {
 		})
 	}
 
-	variables.push({
-		label: 'Date ISO (YYYY-MM-DD)',
-		name: 'date_iso',
-	})
-	variables.push({
-		label: 'Year (YYYY)',
-		name: 'date_y',
-	})
-	variables.push({
-		label: 'Month (MM)',
-		name: 'date_m',
-	})
-	variables.push({
-		label: 'Day (DD)',
-		name: 'date_d',
-	})
-	variables.push({
-		label: 'Day of week (number)',
-		name: 'date_dow',
-	})
-	variables.push({
-		label: 'Day of week (name)',
-		name: 'date_weekday',
-	})
 	variables.push({
 		label: 'Time of day (HH:MM:SS)',
 		name: 'time_hms',
