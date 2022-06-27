@@ -40,9 +40,12 @@ function instance(system, id, config) {
 		const hhmm = hh + ':' + mm
 		const hhmmss = hhmm + ':' + ss
 		self.setVariables({
+			date_iso: now.toISOString().slice(0, 10),
 			date_y: now.getFullYear(),
 			date_m: month,
 			date_d: day,
+			date_dow: now.getDay(),
+			date_weekday: now.toLocaleString(undefined, { weekday: 'long' }),
 			time_hms: hhmmss,
 			time_hm: hhmm,
 			time_h: hh,
@@ -119,6 +122,12 @@ instance.prototype.init = function () {
 		instance_errors: 0,
 		instance_warns: 0,
 		instance_oks: 0,
+		date_iso: '',
+		date_y: '',
+		date_m: '',
+		date_d: '',
+		date_dow: '',
+		date_weekday: '',
 		time_hms: '',
 		time_hm: '',
 		time_h: '',
@@ -269,14 +278,14 @@ instance.prototype.bank_indicate_push = function (page, bank, state) {
 instance.prototype.devices_list = function (list) {
 	let self = this
 
-	self.devices = list
+	self.devices = Object.values(list)
 }
 
 instance.prototype.devices_getall = function () {
 	let self = this
 
 	self.system.emit('devices_list_get', function (list) {
-		self.devices = list
+		self.devices = Object.values(list)
 	})
 }
 
@@ -535,7 +544,7 @@ instance.prototype.init_actions = function (system) {
 		},
 
 		button_pressrelease_condition: {
-			label: 'Button Press/Release if Variable meets Condition',
+			label: 'Button Press and Release if Variable meets Condition',
 			options: [
 				{
 					type: 'internal:variable',
@@ -573,10 +582,21 @@ instance.prototype.init_actions = function (system) {
 					id: 'bank',
 				},
 			],
+			learn: (action) => {
+				let value = ''
+
+				const id = action.options.variable.split(':')
+				self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
+
+				return {
+					...action.options,
+					value: value,
+				}
+			},
 		},
 
 		button_pressrelease_condition_variable: {
-			label: 'Button Press/Release if Variable meets Condition (Custom Variables)',
+			label: 'Button Press and Release if Variable meets Condition (Custom Variables)',
 			options: [
 				{
 					type: 'internal:variable',
@@ -612,6 +632,17 @@ instance.prototype.init_actions = function (system) {
 					id: 'bank',
 				},
 			],
+			learn: (action) => {
+				let value = ''
+
+				const id = action.options.variable.split(':')
+				self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
+
+				return {
+					...action.options,
+					value: value,
+				}
+			},
 		},
 
 		button_press: {
@@ -771,6 +802,19 @@ instance.prototype.init_actions = function (system) {
 					default: '',
 				},
 			],
+			learn: (action) => {
+				let value = ''
+
+				let variableName = `custom_${action.options.name}`
+				self.system.emit('variable_get', 'internal', variableName, (_value) => {
+					value = _value
+				})
+
+				return {
+					...action.options,
+					value: value,
+				}
+			},
 		},
 		custom_variable_math_operation: {
 			label: 'Modify Variable Value with Math Operation',
@@ -989,7 +1033,7 @@ instance.prototype.init_actions = function (system) {
 		}
 	}
 
-	self.system.emit('instance_actions', self.id, actions)
+	self.setActions(actions)
 }
 
 instance.prototype.action = function (action, extras) {
@@ -1503,6 +1547,30 @@ instance.prototype.update_variables = function () {
 	}
 
 	variables.push({
+		label: 'Date ISO (YYYY-MM-DD)',
+		name: 'date_iso',
+	})
+	variables.push({
+		label: 'Year (YYYY)',
+		name: 'date_y',
+	})
+	variables.push({
+		label: 'Month (MM)',
+		name: 'date_m',
+	})
+	variables.push({
+		label: 'Day (DD)',
+		name: 'date_d',
+	})
+	variables.push({
+		label: 'Day of week (number)',
+		name: 'date_dow',
+	})
+	variables.push({
+		label: 'Day of week (name)',
+		name: 'date_weekday',
+	})
+	variables.push({
 		label: 'Time of day (HH:MM:SS)',
 		name: 'time_hms',
 	})
@@ -1719,6 +1787,16 @@ instance.prototype.init_feedback = function () {
 		},
 		unsubscribe: (fb) => {
 			delete self.feedback_variable_subscriptions[fb.id]
+		},
+		learn: (fb) => {
+			let value = ''
+			const id = fb.options.variable.split(':')
+			self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
+
+			return {
+				...fb.options,
+				value: value,
+			}
 		},
 	}
 	feedbacks['variable_variable'] = {
