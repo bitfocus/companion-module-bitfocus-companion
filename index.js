@@ -386,7 +386,12 @@ instance.prototype.init_actions = function (system) {
 					label: 'Enable',
 					id: 'enable',
 					default: 'true',
-					choices: self.CHOICES_YESNO_BOOLEAN,
+					// choices: self.CHOICES_YESNO_BOOLEAN, // original
+					choices: [
+						{ id: 'toggle', label: 'Toggle' },
+						{ id: 'true', label: 'Yes' },
+						{ id: 'false', label: 'No' },
+					],
 				},
 			],
 		},
@@ -1172,7 +1177,17 @@ instance.prototype.action = function (action, extras) {
 		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
 		self.system.emit('custom_variable_set_value', opt.name, value)
 	} else if (id == 'instance_control') {
-		self.system.emit('instance_enable', opt.instance_id, opt.enable == 'true')
+		let curState = ''
+		if (self.instance_status.hasOwnProperty(opt.instance_id)) {
+			curState = self.instance_status[opt.instance_id][0]
+		}
+		else curState = -1 // no status entry if instance is disabled
+		let newState = opt.enable  == 'true'
+		if (opt.enable == 'toggle') {
+			if (curState == -1) newState = true
+			else newState = false
+		}
+		self.system.emit('instance_enable', opt.instance_id, newState)
 	} else if (id == 'set_page') {
 		self.changeControllerPage(theController, thePage)
 	} else if (id == 'set_brightness') {
