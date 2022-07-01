@@ -1211,13 +1211,13 @@ instance.prototype.action = function (action, extras) {
 		self.system.emit('variable_get', id[0], id[1], (v) => (value = v))
 		self.system.emit('custom_variable_set_value', opt.name, value)
 	} else if (id == 'instance_control') {
-		let newState = opt.enable  == 'true'
+		let newState = opt.enable == 'true'
 		if (opt.enable == 'toggle') {
 			let curState = false // no status entry if instance is disabled on startup
 			if (self.instance_status.hasOwnProperty(opt.instance_id)) {
-				curState = self.instance_status[opt.instance_id][0] == -1
+				curState = self.instance_status[opt.instance_id][0] != -1
 			}
-			
+
 			newState = !curState
 		}
 		self.system.emit('instance_enable', opt.instance_id, newState)
