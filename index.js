@@ -71,7 +71,7 @@ instance.prototype.init = function () {
 	self.cached_bank_info = {}
 	self.pageHistory = {}
 	self.custom_variables = {}
-	self.triggers = []
+	self.triggers = {}
 
 	self.feedback_variable_subscriptions = {}
 
@@ -1433,7 +1433,7 @@ instance.prototype.action = function (action, extras) {
 	} else if (id == 'app_restart') {
 		self.system.emit('restart')
 	} else if (id == 'trigger_enabled') {
-		const trigger = self.triggers.find((x) => x.id === opt.trigger_id)
+		const trigger = self.triggers[opt.trigger_id]
 		if (!trigger) return false
 
 		let newState = opt.enable == 'true'
@@ -1979,7 +1979,7 @@ instance.prototype.feedback = function (feedback, bank, info) {
 			}
 		}
 	} else if (feedback.type == 'trigger_enabled') {
-		const trigger = self.triggers.find((x) => x.id === feedback.options.trigger_id)
+		const trigger = self.triggers[feedback.options.trigger_id]
 		if (!trigger) return false
 
 		const state = !trigger.disabled
