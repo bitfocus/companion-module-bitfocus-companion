@@ -1215,7 +1215,9 @@ instance.prototype.action = function (action, extras) {
 		if (opt.enable == 'toggle') {
 			let curState = false // no status entry if instance is disabled on startup
 			if (self.instance_status.hasOwnProperty(opt.instance_id)) {
-				curState = self.instance_status[opt.instance_id][0] != -1
+				curState = self.instance_status[opt.instance_id][0]
+				// some modules set STATE_UNKNOWN (null) during .destroy()
+				curState = !( curState == null || curState == -1 )
 			}
 
 			newState = !curState
