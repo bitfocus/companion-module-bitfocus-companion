@@ -1217,7 +1217,7 @@ instance.prototype.action = function (action, extras) {
 			if (self.instance_status.hasOwnProperty(opt.instance_id)) {
 				curState = self.instance_status[opt.instance_id][0]
 				// some modules set STATE_UNKNOWN (null) during .destroy()
-				curState = !( curState == null || curState == -1 )
+				curState = !(curState == null || curState == -1)
 			}
 
 			newState = !curState
@@ -1426,6 +1426,11 @@ instance.prototype.action = function (action, extras) {
 						self.log('error', 'Shell command failed. Guru meditation: ' + JSON.stringify(error))
 						self.debug(error)
 					}
+
+					// Trim EOL character(s) appended by the OS
+					if (typeof stdout === 'string' && stdout.endsWith(os.EOL))
+						stdout = stdout.substring(0, stdout.length - os.EOL.length)
+
 					self.system.emit('custom_variable_set_value', action.options.targetVariable, stdout)
 				}
 			)
