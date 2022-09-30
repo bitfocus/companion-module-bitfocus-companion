@@ -1003,6 +1003,26 @@ instance.prototype.init_actions = function (system) {
 				},
 			],
 		},
+		custom_variable_reset_to_default: {
+			label: 'Reset custom variable to startup value',
+			options: [
+				{
+					type: 'internal:custom_variable',
+					label: 'Custom variable',
+					id: 'name',
+				},
+			],
+		},
+		custom_variable_sync_to_default: {
+			label: 'Write custom variable current value to startup value',
+			options: [
+				{
+					type: 'internal:custom_variable',
+					label: 'Custom variable',
+					id: 'name',
+				},
+			],
+		},
 		trigger_enabled: {
 			label: 'Enable or disable trigger',
 			options: [
@@ -1105,7 +1125,11 @@ instance.prototype.action = function (action, extras) {
 		return
 	}
 
-	if (id == 'custom_variable_set_value') {
+	if (id == 'custom_variable_reset_to_default') {
+		self.system.emit('custom_variable_reset_value_to_default', opt.name)
+	} else if (id == 'custom_variable_sync_to_default') {
+		self.system.emit('custom_variable_sync_value_to_default', opt.name)
+	} else if (id == 'custom_variable_set_value') {
 		self.system.emit('custom_variable_set_value', opt.name, opt.value)
 	} else if (id == 'custom_variable_math_operation') {
 		let value = ''
