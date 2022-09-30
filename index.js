@@ -4,6 +4,7 @@ const exec = require('child_process').exec
 const GetUpgradeScripts = require('./upgrades')
 const _ = require('underscore')
 const jp = require('jsonpath')
+const systeminformation = require('systeminformation')
 
 function instance(system, id, config) {
 	let self = this
@@ -139,7 +140,53 @@ instance.prototype.init = function () {
 		shuttle: '0',
 	})
 
+	self.system_interval = systeminformation.observe(
+		{
+			cpuTemperature: 'main',
+			currentLoad: 'currentLoad',
+			mem: '*',
+			fsSize: '*',
+		},
+		1000,
+		self.updateSystemStats.bind(self)
+	)
+
 	self.status(self.STATE_OK)
+}
+
+instance.prototype.updateSystemStats = function (stats) {
+	const self = this
+
+	const values = {}
+	const disksDefinitions = []
+
+	if (stats) {
+		if (stats.cpuTemperature) values.cpu_temperature = stats.cpuTemperature.main
+		if (typeof stats.currentLoad?.currentLoad === 'number') values.cpu_usage = Math.round(stats.currentLoad.currentLoad)
+		if (stats.mem?.active && stats.mem.total)
+			values.mem_percent = Math.round((stats.mem.active / stats.mem.total) * 100)
+		if (stats.mem?.active) values.mem_used_mb = Math.round(stats.mem.active / (1024 * 1024))
+		if (stats.mem?.total) values.mem_total_mb = Math.round(stats.mem.total / (1024 * 1024))
+
+		if (stats.fsSize) {
+			for (const fs of stats.fsSize) {
+				const name = `fs_${fs.fs?.replace(/\//gi, '_')}_percent`.replace(/(_{2,})/gi, '_')
+				disksDefinitions.push({
+					label: `Filesystem ${fs.fs} Percentage`,
+					name: name,
+				})
+
+				values[name] = fs.use
+			}
+		}
+	}
+
+	if (!_.isEqual(disksDefinitions, self.disksDefinitions || [])) {
+		self.disksDefinitions = disksDefinitions
+		self.update_variables()
+	}
+
+	self.setVariables(values)
 }
 
 instance.prototype.bind_ip_get = function () {
@@ -368,6 +415,9 @@ instance.prototype.destroy = function () {
 		clearInterval(self.time_interval)
 	}
 	self.removeAllSystemCallbacks()
+
+	clearInterval(self.system_interval)
+	self.system_interval = undefined
 }
 
 instance.prototype.init_actions = function (system) {
@@ -1665,6 +1715,31 @@ instance.prototype.update_variables = function () {
 			name: `custom_${name}`,
 		})
 	}
+
+	variables.push(
+		{
+			label: 'CPU Temperature',
+			name: 'cpu_temperature',
+		},
+		{
+			label: 'CPU Usage Percent',
+			name: 'cpu_usage',
+		},
+		{
+			label: 'Memory Usage Percent',
+			name: 'mem_percent',
+		},
+		{
+			label: 'Memory Used MB',
+			name: 'mem_used_mb',
+		},
+		{
+			label: 'Memory Total MB',
+			name: 'mem_total_mb',
+		}
+	)
+
+	variables.push(...(self.disksDefinitions || []))
 
 	self.setVariableDefinitions(variables)
 }
