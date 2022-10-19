@@ -40,6 +40,7 @@ function instance(system, id, config) {
 		const day = `0${now.getDate()}`.slice(-2)
 		const hhmm = hh + ':' + mm
 		const hhmmss = hhmm + ':' + ss
+		const ts = Math.floor(now.getTime() / 1000)
 		self.setVariables({
 			date_iso: `${year}-${month}-${day}`,
 			date_y: year,
@@ -52,6 +53,7 @@ function instance(system, id, config) {
 			time_h: hh,
 			time_m: mm,
 			time_s: ss,
+			time_unix: ts,
 		})
 	}, 1000)
 
@@ -135,6 +137,7 @@ instance.prototype.init = function () {
 		time_h: '',
 		time_m: '',
 		time_s: '',
+		time_unix: 0,
 		't-bar': '0',
 		jog: '0',
 		shuttle: '0',
@@ -1620,6 +1623,10 @@ instance.prototype.update_variables = function () {
 	variables.push({
 		label: 'Time of day (SS)',
 		name: 'time_s',
+	})
+	variables.push({
+		label: 'UNIX timestamp (S)',
+		name: 'time_unix',
 	})
 
 	variables.push({
