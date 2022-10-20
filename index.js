@@ -78,6 +78,7 @@ instance.prototype.init = function () {
 
 	self.BUTTON_ACTIONS = [
 		'button_pressrelease',
+		'button_pressrelease_condition',
 		'button_press',
 		'button_release',
 		'button_text',
