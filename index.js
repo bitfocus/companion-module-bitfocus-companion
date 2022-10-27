@@ -29,7 +29,7 @@ function instance(system, id, config) {
 
     self.checkFeedbacks('instance_status')
   })
-
+  
   self.time_interval = setInterval(function () {
     const now = new Date()
     const hh = `0${now.getHours()}`.slice(-2)
