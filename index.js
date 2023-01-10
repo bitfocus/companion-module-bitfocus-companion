@@ -626,12 +626,12 @@ instance.prototype.init_actions = function (system) {
 					default: '',
 				},
 				{
-					type: 'internal:custom_variable',
+					type: 'internal:variable',
 					label: 'Page by Custom Variable',
 					id: 'page',
 				},
 				{
-					type: 'internal:custom_variable',
+					type: 'internal:variable',
 					label: 'Bank by Custom Variable',
 					id: 'bank',
 				},
@@ -1424,15 +1424,28 @@ instance.prototype.action = function (action, extras) {
 
 		if (pressIt) {
 			const page_id = opt.page.split(':')
-			self.system.emit('variable_get', page_id[0], page_id[1], (v) => (thePage = v))
-			thePage = parseInt(thePage)
-
+			self.system.emit('variable_get', page_id[0], page_id[1], (v) => (thePage = v))	
+						
+			thePageInt = parseInt(thePage)
+			if (Number.isNaN(thePageInt)) {
+				self.debug("thePage is not a number: ", thePage)
+				self.log('warn', "The Page is not a number value is: " + thePage)
+				return
+			}
+			
+			
 			const bank_id = opt.bank.split(':')
-			self.system.emit('variable_get', bank_id[0], bank_id[1], (v) => (theBank = v))
-			theBank = parseInt(theBank)
+			self.system.emit('variable_get', bank_id[0], bank_id[1], (v) => (theBank = v))		
+			theBankInt = parseInt(theBank)
+			if (Number.isNaN(theBankInt)) {
+				self.debug("theBank is not a number: ", theBank)
+				self.log('warn', "The Bank is not a number value is: " + theBank)
+				return
+			}
+			
 
-			self.system.emit('bank_pressed', thePage, theBank, true, theController)
-			self.system.emit('bank_pressed', thePage, theBank, false, theController)
+			self.system.emit('bank_pressed', thePageInt, theBankInt, true, theController)
+			self.system.emit('bank_pressed', thePageInt, theBankInt, false, theController)
 		}
 	} else if (id == 'button_press') {
 		self.system.emit('bank_pressed', thePage, theBank, true, theController)
